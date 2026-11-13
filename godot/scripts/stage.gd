@@ -31,6 +31,16 @@ func _ready() -> void:
 	wave.generate_mipmaps = true
 	wave.noise = noise
 	backdrop_mat.set_shader_parameter("wave_normal", wave)
+	var blob := NoiseTexture2D.new()
+	var bn := FastNoiseLite.new()
+	bn.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	bn.frequency = 0.02
+	blob.width = 128; blob.height = 128
+	blob.seamless = true
+	blob.generate_mipmaps = true
+	blob.noise = bn
+	backdrop_mat.set_shader_parameter("blob_noise", blob)
+	backdrop_mat.set_shader_parameter("lantern_x", LANTERN.x / W)
 	add_child(backdrop)
 	pier = Sprite2D.new()
 	pier.texture = load("res://assets/art/pier.png")
@@ -51,6 +61,13 @@ func _ready() -> void:
 	cat = Node2D.new()
 	cat.set_script(load("res://scripts/stage_cat.gd"))
 	add_child(cat)
+	# 랜턴 불빛·반딧불이: 빛을 '더하는' 레이어라 부두와 까미를 실제로 비춘다
+	var light := Node2D.new()
+	light.set_script(load("res://scripts/stage_light.gd"))
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	light.material = add
+	add_child(light)
 	var effects := Node2D.new()
 	effects.set_script(load("res://scripts/stage_effects.gd"))
 	add_child(effects)
@@ -68,6 +85,7 @@ func _draw() -> void:
 	backdrop.position = _base
 	var wk: String = Game.weather.key
 	backdrop_mat.set_shader_parameter("strength", 1.7 if wk == "storm" else (1.35 if wk == "hightide" else 1.0))
+	backdrop_mat.set_shader_parameter("lantern", lantern_flicker(Game.clock))
 	pier.position = _base + Vector2(0, PIER_TOP)
 	cat.position = _base
 	draw_water(Game.clock)

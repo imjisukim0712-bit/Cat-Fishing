@@ -6,6 +6,14 @@ const PIER_TOP := 318.0 - 16.0 - 232.0 * PIER_SCALE
 ## 그림 왼쪽 끝마구리(모서리 깎인 부분)를 잘라내 부두가 화면 밖으로 이어지는 것처럼 보이게
 const PIER_CUT := 64.0
 const PIER_SHIFT := -PIER_CUT * PIER_SCALE   # 잘라낸 만큼 그림 속 위치가 왼쪽으로 이동
+## 부두 그림 속 랜턴 유리 중심 (무대 좌표)
+const LANTERN := Vector2(237.0 * PIER_SCALE - PIER_CUT * PIER_SCALE, 318.0 - 16.0 - 232.0 * PIER_SCALE + 150.0 * PIER_SCALE)
+
+## 랜턴 불꽃 밝기: 여러 주기를 섞어 불규칙하게 일렁임 (0.7~1.1)
+static func lantern_flicker(t: float) -> float:
+	var f := 0.9 + 0.07 * sin(t * 7.3) + 0.05 * sin(t * 13.1 + 1.0) + 0.04 * sin(t * 23.7 + 2.0) + 0.03 * sin(t * 2.1)
+	if fmod(t, 5.3) < 0.12: f -= 0.12   # 가끔 '툭' 하고 약해짐
+	return clampf(f, 0.7, 1.1)
 
 
 const W := 960.0
