@@ -90,7 +90,7 @@ func draw_cat(tm: float) -> void:
 	var pk := SCALE * PART_K * (0.5 * (1.0 + sx))   # 통통해지면 얼굴도 살짝 넓게
 	var eye_pos := to_stage(Vector2(223, EYES_Y), anchor, sx, sy)
 	if eyes == "eyes_normal" or eyes == "eyes_alert":
-		var eye_off := 56.0 * pk + EYE_SPREAD * sx   # 눈 그림에서 각 눈 중심은 한가운데서 ±56px
+		var eye_off := 50.5 * pk + EYE_SPREAD * sx   # 눈 그림에서 각 눈 중심은 한가운데서 ±50.5px
 		for side in [-1.0, 1.0]:                     # 밤 고양이 눈빛 (눈마다 따로, 사이에 띠가 생기지 않게)
 			glow(eye_pos.x + side * eye_off, eye_pos.y, 9, 6, c("#d3ef5b", .14))
 	var star_pulse := 1.0 + (sin(tm * 9) * 0.08 if mood == "star" else 0.0)
