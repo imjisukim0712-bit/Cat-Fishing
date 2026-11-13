@@ -20,14 +20,14 @@ var status_box: PanelContainer
 var status_label: RichTextLabel
 var status_tween: Tween
 var bubble: PanelContainer
-var bubble_text: Label
+var bubble_text: RichTextLabel
 var bubble_tween: Tween
 var bubble_timer: SceneTreeTimer
 
-var coin_label: Label
-var aff_label: Label
+var coin_label: RichTextLabel
+var aff_label: RichTextLabel
 var weather_chip: PanelContainer
-var weather_label: Label
+var weather_label: RichTextLabel
 var creel_badge: Label
 var sound_btn: Button
 
@@ -97,6 +97,32 @@ func rich(size := 13, col := TEXT) -> RichTextLabel:
 	r.add_theme_color_override("default_color", col)
 	return r
 
+## 이모지가 섞인 글자를 그림 아이콘으로 바꿔 보여주는 리치 텍스트
+func etext(txt: String, size := 13, col := TEXT, font: Font = null, center := false) -> RichTextLabel:
+	var r := rich(size, col)
+	if font: r.add_theme_font_override("normal_font", font)
+	r.text = ("[center]%s[/center]" if center else "%s") % Data.emoji_bb(txt, int(size * 1.35))
+	return r
+
+func icon_rect(name: String, px: float) -> TextureRect:
+	var tr := TextureRect.new()
+	tr.texture = Data.icon(name)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.custom_minimum_size = Vector2(px, px)
+	tr.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return tr
+
+## 버튼 글자 앞의 이모지는 그림 아이콘으로 (예: "🪙 55" → 동전 그림 + "55")
+func set_btn(b: Button, txt: String) -> void:
+	var parts := Data.split_icon(txt)
+	b.icon = Data.icon(parts[0]) if parts[0] != "" else null
+	b.text = parts[1]
+	var fs := b.get_theme_font_size("font_size")
+	b.add_theme_constant_override("icon_max_width", int(fs * 1.5))
+	b.expand_icon = false
+
 ## 원본 .mini / .btn 버튼
 func btn(txt: String, kind := "mini", cb := Callable(), disabled := false) -> Button:
 	var b := Button.new()
@@ -134,6 +160,7 @@ func btn(txt: String, kind := "mini", cb := Callable(), disabled := false) -> Bu
 	b.add_theme_color_override("font_disabled_color", Color("#4d566f"))
 	if cb.is_valid(): b.pressed.connect(cb)
 	if kind != "x": glass_sheen(b, radius)
+	set_btn(b, txt)
 	return b
 
 func chip(content: Control, bg := PANEL, border := LINE) -> PanelContainer:
@@ -227,17 +254,18 @@ func _build_hud() -> void:
 	var brand := HBoxContainer.new()
 	brand.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	brand.add_theme_constant_override("separation", 7)
-	brand.add_child(lbl("🐈‍⬛ 까미와 밤낚시", 17, TEXT, Data.font_heavy))
+	brand.add_child(icon_rect("kkami_head", 26))
+	brand.add_child(lbl("까미와 밤낚시", 17, TEXT, Data.font_heavy))
 	var small := lbl("Kkami's Midnight Fishing", 11, DIM)
 	small.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	brand.add_child(small)
 	hud.add_child(brand)
 
-	coin_label = lbl("🪙 0", 13, GOLD, Data.font_heavy)
+	coin_label = etext("🪙 0", 13, GOLD, Data.font_heavy)
 	hud.add_child(chip(coin_label, PANEL, LINE))
-	aff_label = lbl("💗 ♡♡♡♡♡ 0%", 13, TEXT, Data.font_heavy)
+	aff_label = etext("💗 ♡♡♡♡♡ 0%", 13, TEXT, Data.font_heavy)
 	hud.add_child(chip(aff_label))
-	weather_label = lbl("🌙 맑음", 13, TEXT, Data.font_heavy)
+	weather_label = etext("🌙 맑음", 13, TEXT, Data.font_heavy)
 	weather_chip = chip(weather_label)
 	weather_chip.mouse_filter = Control.MOUSE_FILTER_PASS
 	hud.add_child(weather_chip)
@@ -308,10 +336,10 @@ func _build_stage() -> void:
 	var bv := VBoxContainer.new()
 	bv.add_theme_constant_override("separation", 3)
 	bv.add_child(lbl("까미  ✦", 11, Color("#ffb6df"), Data.font_heavy))
-	bubble_text = lbl("", 14, TEXT)
+	bubble_text = rich(14, TEXT)
 	bubble_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	bubble_text.custom_minimum_size.x = 200
-	bubble_text.add_theme_constant_override("line_spacing", 4)
+	bubble_text.add_theme_constant_override("line_separation", 4)
 	bv.add_child(bubble_text)
 	bubble.add_child(bv)
 	var tail := Polygon2D.new()
@@ -353,7 +381,7 @@ func _build_footer() -> void:
 	var keys := rich(11, DIM)
 	keys.add_theme_color_override("default_color", DIM)
 	keys.add_theme_font_override("normal_font", Data.font_regular)
-	keys.text = "[center]🎣 [color=#e8edfb][b]스페이스[/b][/color] / [color=#e8edfb][b]클릭[/b][/color] = 던지기 · 챔질 · 릴 감기  ·  잡은 물고기는 팔거나 [color=#e8edfb][b]까미에게[/b][/color] 주세요[/center]"
+	keys.text = "[center]" + Data.emoji_bb("🎣", 15) + " [color=#e8edfb][b]스페이스[/b][/color] / [color=#e8edfb][b]클릭[/b][/color] = 던지기 · 챔질 · 릴 감기  ·  잡은 물고기는 팔거나 [color=#e8edfb][b]까미에게[/b][/color] 주세요[/center]"
 	keys.position = Vector2(20, STAGE_POS.y + STAGE_SIZE.y + 9)
 	keys.size = Vector2(960, 18)
 	add_child(keys)
@@ -371,12 +399,12 @@ func _build_modal_layer() -> void:
 
 # ================================================================= HUD
 func refresh_hud() -> void:
-	coin_label.text = "🪙 " + Data.comma(Game.S.coins)
+	coin_label.text = Data.emoji_bb("🪙 " + Data.comma(Game.S.coins), 18)
 	creel_badge.text = str(Game.S.creel.size())
 	var pct := Game.aff_pct()
 	var hearts := mini(5, pct / 20)
-	aff_label.text = "💗 " + "♥".repeat(hearts) + "♡".repeat(5 - hearts) + " %d%%" % pct
-	sound_btn.text = "🔊" if Game.S.sound else "🔇"
+	aff_label.text = Data.emoji_bb("💗 " + "♥".repeat(hearts) + "♡".repeat(5 - hearts) + " %d%%" % pct, 18)
+	set_btn(sound_btn, "🔊" if Game.S.sound else "🔇")
 	# 열려 있는 모달 내용 갱신
 	match modal_id:
 		"creel": _fill_creel()
@@ -384,7 +412,7 @@ func refresh_hud() -> void:
 
 func _refresh_weather() -> void:
 	var w: Dictionary = Data.WEATHER_BY_KEY[Game.weather.key]
-	weather_label.text = "%s %s" % [w.e, w.name]
+	weather_label.text = Data.emoji_bb("%s %s" % [w.e, w.name], 18)
 	weather_chip.tooltip_text = ("이 날씨에서만 %s을(를) 낚을 수 있어요" % Data.FISH_BY_ID[w.fish].n) if w.has("fish") else "평범한 밤"
 
 # ================================================================= 상태줄 / 말풍선 / 글자
@@ -402,7 +430,7 @@ func _on_status(bb: String, hot: bool) -> void:
 		status_tween.tween_property(status_box, "scale", Vector2.ONE, 0.35)
 
 func _on_cat_said(txt: String, sec: float) -> void:
-	bubble_text.text = txt
+	bubble_text.text = Data.emoji_bb(txt, 18)
 	var max_w := STAGE_SIZE.x * 0.46 - 30
 	var tw := Data.font_bold.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 	bubble_text.custom_minimum_size.x = minf(max_w, tw + 2)
@@ -430,10 +458,17 @@ func _fix_bubble_size() -> void:
 	bubble.reset_size()
 
 func _on_pop(txt: String, x_pct: float, y_pct: float, col: Color) -> void:
-	var l := lbl(txt, 20, col, Data.font_heavy)
-	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, .8))
-	l.add_theme_constant_override("shadow_offset_y", 2)
-	l.add_theme_constant_override("shadow_outline_size", 6)
+	# 맨 앞 이모지는 그림 아이콘으로 (예: "🪙 +12" → 동전 그림 + "+12")
+	var parts := Data.split_icon(txt)
+	var l := HBoxContainer.new()
+	l.add_theme_constant_override("separation", 4)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if parts[0] != "": l.add_child(icon_rect(parts[0], 26))
+	var tl := lbl(parts[1], 20, col, Data.font_heavy)
+	tl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, .8))
+	tl.add_theme_constant_override("shadow_offset_y", 2)
+	tl.add_theme_constant_override("shadow_outline_size", 6)
+	l.add_child(tl)
 	overlay.add_child(l)
 	l.reset_size()
 	var base := Vector2(x_pct / 100.0 * STAGE_SIZE.x - l.size.x / 2.0, y_pct / 100.0 * STAGE_SIZE.y)
@@ -586,7 +621,7 @@ func _modal_frame(title: String, sub: String, width := 560.0) -> Dictionary:
 		var hv := VBoxContainer.new()
 		hv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		hv.add_theme_constant_override("separation", 3)
-		hv.add_child(lbl(title, 19, TEXT, Data.font_heavy))
+		hv.add_child(etext(title, 19, TEXT, Data.font_heavy))
 		var sl := rich(12, DIM)
 		sl.add_theme_font_override("normal_font", Data.font_regular)
 		sl.add_theme_color_override("default_color", DIM)
@@ -667,11 +702,13 @@ func _fill_creel() -> void:
 	var body: VBoxContainer = fr.body
 	var S := Game.S
 	if S.creel.is_empty():
-		var e := lbl("어망이 비었어요.\n낚싯대를 던져 물고기를 잡아보세요 🎣", 13, DIM, Data.font_regular)
-		e.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		e.custom_minimum_size.y = 90
-		e.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		body.add_child(e)
+		var e := etext("어망이 비었어요.\n낚싯대를 던져 물고기를 잡아보세요 🎣", 13, DIM, Data.font_regular, true)
+		e.custom_minimum_size = Vector2(520, 90)
+		e.add_theme_constant_override("line_separation", 4)
+		var ec := CenterContainer.new()
+		ec.custom_minimum_size.y = 90
+		ec.add_child(e)
+		body.add_child(ec)
 	else:
 		var inner := _scroll(body, 380)
 		var order := {"trans": 0, "myth": 1, "legend": 2, "epic": 3, "rare": 4, "common": 5, "junk": 6}
@@ -689,7 +726,7 @@ func _fill_creel() -> void:
 			nm.add_child(lbl(f.n, 14, ra.col, Data.font_heavy))
 			nm.add_child(tag(ra.name, ra.col))
 			info.add_child(nm)
-			info.add_child(lbl("%scm · 🪙 %d" % [Data.fmt_cm(f.cm), f.price], 11, DIM))
+			info.add_child(etext("%scm · 🪙 %d" % [Data.fmt_cm(f.cm), f.price], 11, DIM))
 			h.add_child(info)
 			var uid: String = f.uid
 			h.add_child(btn("팔기", "sell", func(): Game.sell_fish(uid)))
@@ -703,7 +740,7 @@ func _fill_creel() -> void:
 	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	note.add_theme_color_override("default_color", DIM)
 	if not S.creel.is_empty():
-		note.text = "%d마리 · 총 🪙 [b][color=#e8edfb]%s[/color][/b]" % [S.creel.size(), Data.comma(Game.creel_total())]
+		note.text = Data.emoji_bb("%d마리 · 총 🪙 ", 15) % S.creel.size() + "[b][color=#e8edfb]%s[/color][/b]" % Data.comma(Game.creel_total())
 	foot.add_child(note)
 	foot.add_child(btn("전부 팔기", "sell", func(): Game.sell_all()))
 
@@ -723,10 +760,7 @@ func _fill_shop() -> void:
 		var cost := 0 if maxed else Data.upg_cost(u.k, lv)
 		var can: bool = not maxed and S.coins >= cost
 		var h := _row()
-		var ico := lbl(u.e, 26)
-		ico.custom_minimum_size.x = 34
-		ico.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		h.add_child(ico)
+		h.add_child(icon_rect(u.k, 34))
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		info.add_theme_constant_override("separation", 2)
@@ -747,7 +781,7 @@ func _fill_shop() -> void:
 	var note := rich(11, DIM)
 	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	note.add_theme_color_override("default_color", DIM)
-	note.text = "보유 코인 🪙 [b][color=#e8edfb]%s[/color][/b]" % Data.comma(S.coins)
+	note.text = Data.emoji_bb("보유 코인 🪙 ", 15) + "[b][color=#e8edfb]%s[/color][/b]" % Data.comma(S.coins)
 	foot.add_child(note)
 	foot.add_child(btn("기록 초기화", "mini", func(): _confirm_reset()))
 
@@ -773,7 +807,7 @@ func _fill_outfits(inner: VBoxContainer) -> void:
 	sep.add_theme_stylebox_override("separator", ss)
 	inner.add_child(sep)
 	if S.aff < Data.AFF_MAX:
-		inner.add_child(lbl("🔒 엔드 콘텐츠 · 까미 옷입히기", 14, TEXT, Data.font_heavy))
+		inner.add_child(etext("🔒 엔드 콘텐츠 · 까미 옷입히기", 14, TEXT, Data.font_heavy))
 		var lock := PanelContainer.new()
 		var ls := sb(Color("#1c1a37"), Color("#68527d"), 14, 1, Vector4(16, 22, 16, 22))
 		lock.add_theme_stylebox_override("panel", ls)
@@ -788,11 +822,11 @@ func _fill_outfits(inner: VBoxContainer) -> void:
 		return
 	var title := HBoxContainer.new()
 	title.add_theme_constant_override("separation", 6)
-	title.add_child(lbl("✨ 엔드 콘텐츠 · 까미 옷입히기", 14, TEXT, Data.font_heavy))
+	title.add_child(etext("✨ 엔드 콘텐츠 · 까미 옷입히기", 14, TEXT, Data.font_heavy))
 	title.add_child(tag("해금 완료", Color("#c8f08a")))
 	inner.add_child(title)
 	var base_eq: bool = S.outfit == "none"
-	inner.add_child(_outfit_row("🐈‍⬛", "기본 까미", "검은 털이 제일 멋지다는 까미의 주장", -1, base_eq, false,
+	inner.add_child(_outfit_row("none", "기본 까미", "검은 털이 제일 멋지다는 까미의 주장", -1, base_eq, false,
 		"착용 중" if base_eq else "입기", false, "none"))
 	for i in Data.OUTFITS.size():
 		var o: Dictionary = Data.OUTFITS[i]
@@ -803,15 +837,25 @@ func _fill_outfits(inner: VBoxContainer) -> void:
 		var locked := not owned and not prereq_owned
 		var can_buy: bool = not locked and S.coins >= o.price
 		var label := "착용 중" if equipped else ("입기" if owned else ("🔒 잠김" if locked else "🪙 " + Data.comma(o.price)))
-		inner.add_child(_outfit_row("🔒" if locked else o.e, o.n, ("%s 먼저 구매해야 해금돼요" % prereq.n) if locked else o.d,
+		inner.add_child(_outfit_row("lock" if locked else o.id, o.n, ("%s 먼저 구매해야 해금돼요" % prereq.n) if locked else o.d,
 			o.bonus, equipped, locked, label, not owned and not can_buy, o.id))
 
 func _outfit_row(ico: String, nm: String, ds: String, bonus: int, equipped: bool, locked: bool, label: String, disabled: bool, id: String) -> Control:
 	var h := _row(PANEL2, Color("#ffb020") if equipped else LINE)
-	var il := lbl(ico, 26)
-	il.custom_minimum_size.x = 34
-	il.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	h.add_child(il)
+	if ico == "lock":
+		h.add_child(icon_rect("lock", 40))
+	else:
+		var thumb := TextureRect.new()   # 그 옷을 입은 그림 까미
+		var at := AtlasTexture.new()   # 시트 칸의 빈 여백을 잘라 고양이(모자 포함)만 크게
+		at.atlas = load("res://assets/art/kkami/body_%s.png" % ico)
+		at.region = Rect2(84, 24, 283, 378)
+		thumb.texture = at
+		thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		thumb.custom_minimum_size = Vector2(44, 56)
+		thumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		thumb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		h.add_child(thumb)
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var top := HBoxContainer.new()
@@ -868,7 +912,7 @@ func open_dex() -> void:
 			cv.add_theme_constant_override("separation", 1)
 			if d == null:
 				cell.modulate.a = 0.35
-				var q := lbl("❔", 24); q.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+				var q := lbl("?", 26, DIM, Data.font_heavy); q.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 				q.custom_minimum_size.y = 54; q.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 				cv.add_child(q)
 				var n := lbl("???", 11, TEXT); n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -924,8 +968,8 @@ func _open_result(f: Dictionary) -> void:
 	meta.add_child(tag(ra.name, ra.col))
 	meta.add_child(lbl("%scm" % Data.fmt_cm(f.cm), 13, DIM))
 	body.add_child(meta)
-	var pl := lbl("예상가 🪙 %s" % Data.comma(f.price), 17, GOLD, Data.font_heavy)
-	pl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var pl := etext("예상가 🪙 %s" % Data.comma(f.price), 17, GOLD, Data.font_heavy, true)
+	pl.custom_minimum_size.x = 360
 	body.add_child(pl)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)

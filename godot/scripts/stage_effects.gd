@@ -73,8 +73,19 @@ func draw_fight_bar(_tm: float) -> void:
 	panel(x - 14, y - 42, w + 28, h + 62)
 	var ra: Dictionary = Data.RARITY[Game.fish.r]
 	text("%s 입질" % ra.name, x, y - 20, 13, ra.col, HORIZONTAL_ALIGNMENT_LEFT, Data.font_heavy)
-	var prog := "🐾".repeat(f.hits) + "·".repeat(maxi(0, f.need - f.hits)) + "   " + "✖".repeat(f.miss)
-	text(prog, x + w, y - 20, 13, c("#cfd9ef"), HORIZONTAL_ALIGNMENT_RIGHT, Data.font_heavy)
+	# 진행: 맞춘 수만큼 그림 발바닥, 남은 수는 점, 빗나간 수는 빨간 ×  (오른쪽 정렬)
+	var paw: Texture2D = Data.icon("paw")
+	var cx := x + w
+	for i in f.miss:
+		text("×", cx, y - 19, 16, c("#ff6b6b"), HORIZONTAL_ALIGNMENT_RIGHT, Data.font_heavy)
+		cx -= 12
+	if f.miss > 0: cx -= 8
+	for i in range(f.need - 1, -1, -1):
+		if i < f.hits and paw:
+			draw_texture_rect(paw, Rect2(cx - 16, y - 34, 16, 16), false)
+		else:
+			circle(cx - 8, y - 26, 2.2, c("#cfd9ef", .7))
+		cx -= 19
 
 	fill_rrect(x, y, w, h, 9, c("#0b1122"))   # 트랙
 	var zx: float = x + (f.zc - f.zw / 2) * w

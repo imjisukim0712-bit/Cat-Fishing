@@ -188,13 +188,47 @@ func _ready() -> void:
 	for f in [font_regular, font_bold, font_heavy]:
 		f.fallbacks = [emoji]
 
-## 물고기 SVG 아트 (원본의 FISH_ASSETS 를 파일로 분리한 것)
+## 물고기 그림 (그림 화풍 PNG 우선, 없으면 원본에서 분리한 SVG)
 func fish_texture(id: String) -> Texture2D:
 	if FISH_TEX.has(id): return FISH_TEX[id]
-	var path := "res://assets/fish/%s.svg" % id
-	var tex: Texture2D = load(path) if ResourceLoader.exists(path) else null
+	var tex: Texture2D = null
+	for path in ["res://assets/art/fish/%s.png" % id, "res://assets/fish/%s.svg" % id]:
+		if ResourceLoader.exists(path):
+			tex = load(path)
+			break
 	FISH_TEX[id] = tex
 	return tex
+
+## UI 아이콘: 이모지 대신 쓰는 그림 아이콘 (assets/art/icons)
+const EMOJI_ICON := {
+	"🐈‍⬛": "kkami_head", "🪙": "coin", "💗": "heart",
+	"🌙": "w_clear", "🌧️": "w_rain", "🌧": "w_rain", "🌫️": "w_fog", "🌫": "w_fog", "🌊": "w_hightide",
+	"☄️": "w_meteor", "☄": "w_meteor", "⚡": "w_storm",
+	"🧺": "creel", "🛒": "shop", "📖": "dex", "🔊": "sound_on", "🔇": "sound_off",
+	"🎣": "rod", "⚙️": "reel", "⚙": "reel", "🟠": "float", "🦐": "bait", "🧿": "charm",
+	"🐾": "paw", "🔒": "lock", "🔓": "lock", "✨": "sparkle",
+}
+var ICON_TEX := {}
+
+func icon(name: String) -> Texture2D:
+	if not ICON_TEX.has(name):
+		var path := "res://assets/art/icons/%s.png" % name
+		ICON_TEX[name] = load(path) if ResourceLoader.exists(path) else null
+	return ICON_TEX[name]
+
+## 문장 속 이모지를 그림 아이콘 [img] 로 바꾼 BBCode (RichTextLabel 용)
+func emoji_bb(text: String, px := 16) -> String:
+	for e in EMOJI_ICON:
+		if text.contains(e) and icon(EMOJI_ICON[e]):
+			text = text.replace(e, "[img=%dx%d]res://assets/art/icons/%s.png[/img]" % [px, px, EMOJI_ICON[e]])
+	return text
+
+## 맨 앞 이모지를 아이콘 이름과 나머지 글자로 분리 ("🪙 55" → ["coin", "55"])
+func split_icon(text: String) -> Array:
+	for e in EMOJI_ICON:
+		if text.begins_with(e) and icon(EMOJI_ICON[e]):
+			return [EMOJI_ICON[e], text.substr(e.length()).strip_edges()]
+	return ["", text]
 
 ## 업그레이드 비용·설명 (원본의 cost/d 람다)
 static func js_round(x: float) -> int:

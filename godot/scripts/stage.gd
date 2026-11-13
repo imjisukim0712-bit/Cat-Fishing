@@ -1,13 +1,24 @@
 extends "res://scripts/stage_draw.gd"
 ## Hybrid scene: imported paintings beneath live gameplay and a softened cat.
-var backdrop: Texture2D
+var backdrop: Sprite2D
+var backdrop_mat: ShaderMaterial
 var pier: Sprite2D
-var cat_sprite: Sprite2D
+var cat: Node2D
 
 func _ready() -> void:
 	init_brush()
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	backdrop = load("res://assets/art/backdrop.png")
+	# 배경 그림: 물 부분이 일렁이도록 셰이더를 건 스프라이트 (부모 그리기보다 뒤에 깔림)
+	var bd_tex: Texture2D = load("res://assets/art/backdrop.png")
+	backdrop = Sprite2D.new()
+	backdrop.texture = bd_tex
+	backdrop.centered = false
+	backdrop.show_behind_parent = true
+	backdrop.scale = Vector2(W / bd_tex.get_width(), (941.0 * WATER / 548.0) / bd_tex.get_height())
+	backdrop_mat = ShaderMaterial.new()
+	backdrop_mat.shader = load("res://shaders/backdrop_water.gdshader")
+	backdrop.material = backdrop_mat
+	add_child(backdrop)
 	pier = Sprite2D.new()
 	pier.texture = load("res://assets/art/pier.png")
 	pier.centered = false
@@ -21,26 +32,10 @@ func _ready() -> void:
 	var props := Node2D.new()
 	props.set_script(load("res://scripts/stage_props.gd"))
 	add_child(props)
-	# Fixed small canvas includes the full rod sweep, all outfits and max fat size.
-	var cat_view := SubViewport.new()
-	cat_view.name = "PaintedCatViewport"
-	cat_view.size = Vector2i(448, 384)
-	cat_view.transparent_bg = true
-	cat_view.disable_3d = true
-	cat_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	cat_view.render_target_clear_mode = SubViewport.CLEAR_MODE_ALWAYS
-	cat_view.gui_disable_input = true
-	add_child(cat_view)
-	var cat := Node2D.new()
+	# 까미는 이제 그림 스프라이트라 별도 뷰포트·흐림 처리 없이 화면 해상도 그대로 그린다
+	cat = Node2D.new()
 	cat.set_script(load("res://scripts/stage_cat.gd"))
-	cat_view.add_child(cat)
-	cat_sprite = Sprite2D.new()
-	cat_sprite.centered = false
-	cat_sprite.texture = cat_view.get_texture()
-	var cat_material := ShaderMaterial.new()
-	cat_material.shader = load("res://shaders/cat_paint.gdshader")
-	cat_sprite.material = cat_material
-	add_child(cat_sprite)
+	add_child(cat)
 	var effects := Node2D.new()
 	effects.set_script(load("res://scripts/stage_effects.gd"))
 	add_child(effects)
@@ -55,10 +50,11 @@ func _draw() -> void:
 	xf()
 	# One texture draw: align source horizon y=548 to WATER. The extra six
 	# pixels extend below the clipped stage, so no bottom patch/seam is needed.
-	draw_rect(Rect2(-40, -40, W + 80, H + 80), c("#101936"))
-	draw_texture_rect(backdrop, Rect2(0, 0, W, 941.0 * WATER / 548.0), false)
+	backdrop.position = _base
+	var wk: String = Game.weather.key
+	backdrop_mat.set_shader_parameter("strength", 1.7 if wk == "storm" else (1.35 if wk == "hightide" else 1.0))
 	pier.position = _base + Vector2(0, PIER_TOP)
-	cat_sprite.position = _base
+	cat.position = _base
 	draw_water(Game.clock)
 	draw_reflections(Game.clock)
 
