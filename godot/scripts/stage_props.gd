@@ -10,12 +10,12 @@ func _process(_delta: float) -> void:
 func _draw() -> void:
 	_base = get_parent()._base
 	xf()
-	var lantern := Vector2(237 * PIER_SCALE, PIER_TOP + 150 * PIER_SCALE)
+	var lantern := Vector2(237 * PIER_SCALE + PIER_SHIFT, PIER_TOP + 150 * PIER_SCALE)
 	var flicker := .16 + sin(Game.clock * 3.1) * .025 + sin(Game.clock * 5.7) * .015
 	glow(lantern.x, lantern.y, 24, 30, c("#ffc778", flicker))
 	glow(lantern.x, WATER - 16, 47, 5, c("#ffc778", flicker * .7))
 	if not Game.S.creel.is_empty():
-		var box := Vector2(449 * PIER_SCALE, PIER_TOP + 182 * PIER_SCALE)
+		var box := Vector2(449 * PIER_SCALE + PIER_SHIFT, PIER_TOP + 182 * PIER_SCALE)
 		glow(box.x, box.y + 5, 15, 9, c("#64eee9", .38))
 		fill_ell(box.x - 1, box.y + 6, 5, 2, c("#b7fff4", .7))
 		draw_colored_polygon(PackedVector2Array([box + Vector2(3, 6), box + Vector2(7, 3), box + Vector2(7, 9)]), c("#b7fff4", .6))

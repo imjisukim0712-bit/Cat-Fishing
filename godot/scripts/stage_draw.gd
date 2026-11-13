@@ -3,6 +3,9 @@ extends Node2D
 ## 부두 그림 배치: 폭 400px (약한 캐스팅 최소 지점 x=400 과 겹치지 않는 최대 폭)
 const PIER_SCALE := 400.0 / 1869.0
 const PIER_TOP := 318.0 - 16.0 - 232.0 * PIER_SCALE
+## 그림 왼쪽 끝마구리(모서리 깎인 부분)를 잘라내 부두가 화면 밖으로 이어지는 것처럼 보이게
+const PIER_CUT := 64.0
+const PIER_SHIFT := -PIER_CUT * PIER_SCALE   # 잘라낸 만큼 그림 속 위치가 왼쪽으로 이동
 
 
 const W := 960.0

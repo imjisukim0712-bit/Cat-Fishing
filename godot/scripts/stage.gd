@@ -18,11 +18,26 @@ func _ready() -> void:
 	backdrop_mat = ShaderMaterial.new()
 	backdrop_mat.shader = load("res://shaders/backdrop_water.gdshader")
 	backdrop.material = backdrop_mat
+	# 바다 굴절용 물결 노멀맵: 이음매 없는 노이즈 (런타임 생성, 별도 파일 불필요)
+	var noise := FastNoiseLite.new()
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	noise.frequency = 0.012
+	noise.fractal_octaves = 3
+	var wave := NoiseTexture2D.new()
+	wave.width = 256; wave.height = 256
+	wave.seamless = true
+	wave.as_normal_map = true
+	wave.bump_strength = 6.0
+	wave.generate_mipmaps = true
+	wave.noise = noise
+	backdrop_mat.set_shader_parameter("wave_normal", wave)
 	add_child(backdrop)
 	pier = Sprite2D.new()
 	pier.texture = load("res://assets/art/pier.png")
 	pier.centered = false
 	pier.scale = Vector2.ONE * PIER_SCALE
+	pier.region_enabled = true
+	pier.region_rect = Rect2(PIER_CUT, 0, 1869 - PIER_CUT, 740)
 	var pier_material := ShaderMaterial.new()
 	pier_material.shader = load("res://shaders/pier_water.gdshader")
 	pier_material.set_shader_parameter("water_uv", (WATER - PIER_TOP) / (740 * PIER_SCALE))
