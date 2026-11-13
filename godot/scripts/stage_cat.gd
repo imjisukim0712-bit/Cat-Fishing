@@ -4,16 +4,16 @@ extends "res://scripts/stage_draw.gd"
 
 const ART := "res://assets/art/kkami/"
 const OUTFITS := ["none", "hoodie", "captain", "wizard", "space", "royal", "pirate"]
-# 몸 시트 한 칸(443px) 기준 측정값 (귀여운 2차 디자인): 고양이 중심 x=223, 바닥 y=420,
-# 머리 중심 (223,196)·폭 238, 코 (222,232), 턱 y=282
-const CELL_ANCHOR := Vector2(223, 420)
-const EYES_Y := 200.0
-const MOUTH_Y := 250.0
-const NECK_Y := 282.0
-const SCALE := 0.435                # 몸 시트 → 무대 (키 345px → 약 150px)
-const PART_K := 131.0 / 190.0       # 부품 시트 → 몸 시트 (기본 눈 한 쌍 폭 190px = 머리폭의 55%)
-const TAIL_BASE := Vector2(105, 188) # 꼬리 그림에서 몸에 붙는 지점 (아래쪽 끝)
-const EYE_SPREAD := 2.5              # 눈 한 쌍 그림을 반으로 갈라 양쪽으로 더 벌리는 거리 (무대 px, 한쪽 기준)
+# 몸 시트 한 칸(443px) 기준 측정값 (새침한 3차 디자인): 고양이 중심 x=224, 바닥 y=426,
+# 머리 중심 (224,137)·폭 150, 코 (222,137), 턱 y=185
+const CELL_ANCHOR := Vector2(224, 426)
+const EYES_Y := 124.0
+const MOUTH_Y := 151.0
+const NECK_Y := 192.0
+const SCALE := 0.41                 # 몸 시트 → 무대 (키 388px → 약 160px)
+const PART_K := 100.0 / 210.0       # 부품 시트 → 몸 시트 (눈 한 쌍 폭 210px = 머리폭의 2/3)
+const TAIL_BASE := Vector2(30, 258) # 꼬리 그림에서 몸에 붙는 지점 (아래쪽 끝)
+const EYE_SPREAD := 0.0              # 눈 한 쌍 그림을 반으로 갈라 양쪽으로 더 벌리는 거리 (무대 px, 한쪽 기준)
 
 var tex := {}
 
@@ -65,8 +65,8 @@ func draw_cat(tm: float) -> void:
 	# 꼬리 (몸 뒤, 붙는 지점을 축으로 흔들기)
 	var tw := sin(tm * (7.5 if excited else 2.1)) * 0.5
 	var tail_t: Texture2D = tex.tail
-	var tk := SCALE * PART_K * 0.95
-	var pivot := anchor + Vector2(-38 * sx, -10)
+	var tk := SCALE * PART_K * 1.35
+	var pivot := anchor + Vector2(-26 * sx, -8)
 	xf(pivot, -0.08 + tw * 0.22)
 	draw_texture_rect(tail_t, Rect2(-TAIL_BASE * tk, tail_t.get_size() * tk), false)
 	xf()
@@ -90,19 +90,19 @@ func draw_cat(tm: float) -> void:
 	var pk := SCALE * PART_K * (0.5 * (1.0 + sx))   # 통통해지면 얼굴도 살짝 넓게
 	var eye_pos := to_stage(Vector2(223, EYES_Y), anchor, sx, sy)
 	if eyes == "eyes_normal" or eyes == "eyes_alert":
-		var eye_off := 59.0 * pk + EYE_SPREAD * sx   # 눈 그림에서 각 눈 중심은 한가운데서 ±59px
+		var eye_off := 62.0 * pk * 1.15 + EYE_SPREAD * sx   # 눈 그림에서 각 눈 중심은 한가운데서 ±62px
 		for side in [-1.0, 1.0]:                     # 밤 고양이 눈빛 (눈마다 따로, 사이에 띠가 생기지 않게)
-			glow(eye_pos.x + side * eye_off, eye_pos.y, 11, 10, c("#d3ef5b", .16))
+			glow(eye_pos.x + side * eye_off, eye_pos.y, 9, 6, c("#d3ef5b", .14))
 	var star_pulse := 1.0 + (sin(tm * 9) * 0.08 if mood == "star" else 0.0)
-	eyes_split(eyes, eye_pos, pk * star_pulse, EYE_SPREAD * sx)
+	eyes_split(eyes, eye_pos, pk * 1.15 * star_pulse, EYE_SPREAD * sx)
 	var mouth := "mouth_open" if (mood == "star" or mood == "alert") else "mouth_closed"
-	part(mouth, to_stage(Vector2(222, MOUTH_Y + (6.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.9)
+	part(mouth, to_stage(Vector2(222, MOUTH_Y + (4.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.9)
 
 	# 목도리 (레벨업 훈장 느낌)
 	if Game.S.upg.charm > 1:
 		var neck := to_stage(Vector2(223, NECK_Y), anchor, sx, sy)
 		var cols := ["#e0454f", "#ff8a3d", "#63e6ff", "#b06bff", "#ffd166"]
-		fill_ell(neck.x, neck.y, 27 * sx, 7, c(cols[mini(4, Game.S.upg.charm - 1)], .92), 0, 0, PI)
+		fill_ell(neck.x, neck.y, 19 * sx, 6, c(cols[mini(4, Game.S.upg.charm - 1)], .92), 0, 0, PI)
 		circle(neck.x, neck.y + 5, 4.2, c("#ffd166"))
 
 	# 낚싯대 + 대를 쥔 앞발 (흥분 떨림은 몸과 같이)
