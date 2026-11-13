@@ -17,7 +17,7 @@ const W := 960.0
 const H := 540.0
 const WATER := 318.0
 const CAT := Vector2(186, 318)                 # 고양이 발밑
-const ROD_HAND := Vector2(186 + 34, 318 - 96)
+const ROD_HAND := Vector2(186 + 32, 318 - 66)   # 까미 가슴 앞 (그림 까미 기준)
 const SAVE_PATH := "user://kkami-fishing-v1.json"
 
 const STATUS_IDLE := "클릭 또는 [color=#ffc24a]스페이스[/color]로 낚싯대를 던져요"

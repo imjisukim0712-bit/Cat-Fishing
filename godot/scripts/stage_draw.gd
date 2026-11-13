@@ -9,7 +9,7 @@ const W := 960.0
 const H := 540.0
 const WATER := 318.0
 const CAT := Vector2(186, 318)
-const ROD_HAND := Vector2(186 + 34, 318 - 96)
+const ROD_HAND := Vector2(186 + 32, 318 - 66)   # game.gd 와 같은 값
 
 var _base := Vector2.ZERO
 var glow_texture: GradientTexture2D
