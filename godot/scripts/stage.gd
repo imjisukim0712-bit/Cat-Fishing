@@ -11,6 +11,8 @@ const ROD_HAND := Vector2(186 + 34, 318 - 96)
 var stars: Array = []
 var mountains: Array[PackedVector2Array] = []
 var glow_texture: GradientTexture2D
+var cloud_texture: GradientTexture2D
+var wave_ridges: Array[Dictionary] = []
 var _base := Vector2.ZERO      # 화면 흔들림 오프셋
 
 func _ready() -> void:
@@ -28,6 +30,14 @@ func _ready() -> void:
 			pts.append(Vector2(x, y))
 		pts.append(Vector2(W, WATER))
 		mountains.append(pts)
+	# Stable irregular placements; visual randomness never touches Game's RNG.
+	for i in 17:
+		var depth := sqrt(rng.randf_range(.02, 1.0))
+		wave_ridges.append({"x": rng.randf_range(15, W - 15), "y": 427 + depth * 103,
+			"length": rng.randf_range(20, 35 + depth * 105), "phase": rng.randf() * TAU,
+			"bend": rng.randf_range(3, 7) * depth, "depth": depth,
+			"brightness": rng.randf_range(.35, .80) * (.3 + depth * .7),
+			"speed": rng.randf_range(.10, .21)})
 	var gradient := Gradient.new()
 	gradient.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, .25), Color(1, 1, 1, 0)])
 	gradient.offsets = PackedFloat32Array([0, .35, 1])
@@ -38,9 +48,29 @@ func _ready() -> void:
 	glow_texture.fill_to = Vector2(1, .5)
 	glow_texture.width = 128
 	glow_texture.height = 128
+	# Broader matte opacity profile makes wisps visible without emissive bloom.
+	cloud_texture = glow_texture.duplicate() as GradientTexture2D
+	var cloud_gradient := Gradient.new()
+	cloud_gradient.offsets = PackedFloat32Array([0, .45, .75, 1])
+	cloud_gradient.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, .75), Color(1, 1, 1, .25), Color(1, 1, 1, 0)])
+	cloud_texture.gradient = cloud_gradient
 
 func glow(x: float, y: float, rx: float, ry: float, color: Color) -> void:
 	draw_texture_rect(glow_texture, Rect2(x - rx, y - ry, rx * 2, ry * 2), false, color)
+
+func tapered_ridge(points: PackedVector2Array, width: float, color: Color) -> void:
+	var polygon := PackedVector2Array()
+	var colors := PackedColorArray()
+	for side in [1, -1]:
+		for step in points.size():
+			var i: int = step if side == 1 else points.size() - 1 - step
+			var u := float(i) / (points.size() - 1)
+			var taper := pow(maxf(0, sin(PI * u)), .75)
+			var tangent := points[mini(i + 1, points.size() - 1)] - points[maxi(0, i - 1)]
+			var normal := Vector2(-tangent.y, tangent.x).normalized()
+			polygon.append(points[i] + normal * side * width * .5 * maxf(.015, taper))
+			colors.append(Color(color, color.a * taper))
+	draw_polygon(polygon, colors)
 
 func _process(_d: float) -> void:
 	queue_redraw()
@@ -204,24 +234,34 @@ func _draw() -> void:
 
 # ----------------------------------------------------------------- 하늘
 func draw_sky(tm: float) -> void:
-	grad_rect(0, 0, W, WATER, Vector2.ZERO, Vector2(0, WATER), [[0.0, c("#101631")], [.55, c("#252d59")], [1.0, c("#62608a")]])
+	grad_rect(0, 0, W, WATER, Vector2.ZERO, Vector2(0, WATER), [[0.0, c("#14163a")], [.40, c("#3a2f6e")], [.65, c("#6d6198")], [1.0, c("#57547e")]])
+	# Flat atmospheric wisps: low-contrast pigment, no emissive sky glow.
+	for cloud in [Vector4(115, 132, 125, 7), Vector4(470, 154, 165, 8), Vector4(835, 180, 140, 6), Vector4(290, 190, 110, 5)]:
+		var cx: float = cloud.x + sin(tm * .025 + cloud.y) * 9
+		draw_texture_rect(cloud_texture, Rect2(cx - cloud.z, cloud.y - cloud.w, cloud.z * 2, cloud.w * 2), false, c("#d3c5ef", .19))
 	for s in stars:
-		circle(s.x, s.y, s.r, c("#d7d9ff", .22 + .28 * absf(sin(tm * s.sp + s.ph))))
+		circle(s.x, s.y, s.r, c("#d7d9ff", .15 + .20 * absf(sin(tm * s.sp + s.ph))))
+	for point in [Vector2(415, 37), Vector2(872, 91)]:
+		circle(point.x, point.y, 1.05, c("#e2ddff", .65))
 	var mx := 760.0; var my := 88.0; var mr := 36.0
 	# Smooth cream disc: four soft craters, no procedural speckle.
 	glow(mx, my, mr * 1.6, mr * 1.6, c("#ffe3b0", .18))
 	var moon := ell(mx, my, mr, mr)
 	moon.remove_at(moon.size() - 1)
-	grad_poly(moon, Vector2(mx - mr, my), Vector2(mx + mr, my),
+	grad_poly(moon, Vector2(mx - mr * .7, my - mr * .7), Vector2(mx + mr * .7, my + mr * .7),
 		[[0.0, c("#fff5d4")], [.55, c("#fff0c3")], [1.0, c("#e8d6a5")]])
-	for crater in [Vector4(-12, -9, 10, 8), Vector4(11, 5, 13, 11), Vector4(-4, 19, 7, 6), Vector4(16, -16, 6, 5)]:
-		glow(mx + crater.x, my + crater.y, crater.z, crater.w, c("#a48e61", .18))
+	for crater in [Vector4(-13, -8, 14, 11), Vector4(9, 7, 17, 14), Vector4(-6, 17, 10, 9), Vector4(12, -15, 11, 9)]:
+		glow(mx + crater.x, my + crater.y, crater.z, crater.w, c("#b29e77", .09))
 	stroke_ell(mx, my, mr, mr, c("#fff9df", .42), 1)
 	var colors := ["#555780", "#494e78", "#3b436c", "#30385f", "#292f54"]
 	for layer in mountains.size():
 		draw_colored_polygon(mountains[layer], c(colors[layer]))
 		var y := 244.0 + layer * 16
-		grad_rect(0, y, W, 30, Vector2(0, y), Vector2(0, y + 30), [[0.0, c("#aba0ca", 0)], [.6, c("#aba0ca", .055)], [1.0, c("#aba0ca", 0)]])
+		grad_rect(0, y, W, 30, Vector2(0, y), Vector2(0, y + 30), [[0.0, c("#aba0ca", 0)], [.6, c("#bab0d3", .13)], [1.0, c("#aba0ca", 0)]])
+	# Composite soft mist over the ranges so nearer polygons cannot hide it.
+	for ribbon in [Vector4(250, 244, 390, 12), Vector4(720, 262, 390, 13), Vector4(320, 284, 440, 14), Vector4(760, 301, 330, 10)]:
+		glow(ribbon.x, ribbon.y, ribbon.z, ribbon.w, c("#c7bbdf", .23))
+	grad_rect(0, WATER - 18, W, 18, Vector2(0, WATER - 18), Vector2(0, WATER), [[0.0, c("#b8afd2", 0)], [1.0, c("#c9bfe2", .24)]])
 	for i in 21:
 		var x := 340.0 + fmod(i * 137.7, 590)
 		var y := WATER - 4 - fmod(i * 3.3, 7)
@@ -230,70 +270,54 @@ func draw_sky(tm: float) -> void:
 
 # ----------------------------------------------------------------- 물
 func draw_water(tm: float) -> void:
-	grad_rect(0, WATER, W, H - WATER, Vector2(0, WATER), Vector2(0, H), [[0.0, c("#101c38")], [.33, c("#09243a")], [.65, c("#07344b")], [1.0, c("#08263f")]])
-
-	# Quiet distant water; broken, narrow cream reflection.
-	for i in 24:
-		var y := WATER + 3 + i * 6.3
-		var wdt := 8 + i * .8 + sin(tm * .6 + i * 2.1) * 6
-		fill_ell(760 + sin(i * 1.8 + tm * .4) * 7, y, wdt, .7, c("#ffe0b7", .24 - i * .007))
+	# One continuous sea: depth changes smoothly, never at a crest boundary.
+	grad_rect(0, WATER, W, H - WATER, Vector2(0, WATER), Vector2(0, H),
+		[[0.0, c("#14233e")], [.35, c("#102d43")], [.7, c("#0b374a")], [1.0, c("#09465a")]])
+	grad_rect(0, WATER, W, 12, Vector2(0, WATER), Vector2(0, WATER + 12), [[0.0, c("#b8afd2", .12)], [1.0, c("#b8afd2", 0)]])
 	var wk: String = Game.weather.key
-	var amp := 6.4 if wk == "storm" else (5.2 if wk == "hightide" else 2.0)
-	for i in 15:
-		var pts := PackedVector2Array()
-		for x in range(0, 969, 12):
-			pts.append(Vector2(x, WATER + 6 + i * 14 + sin(x * .014 + tm * .45 + i) * amp))
-		draw_polyline(pts, c("#839ed5", .07), 1, true)
-	# Layered alpha glow is local to the near water (Compatibility / Web).
-	for band in 3:
-		var pts := PackedVector2Array()
-		var haze := PackedVector2Array()
-		var haze_colors := PackedColorArray()
-		var strength := .65 + band * .16
-		for x in range(0, 969, 8):
-			var y := 402 + band * 54 + sin(x * .012 + tm * .35 + band * 2) * (9 + band * 3)
-			y += sin(x * .027 - tm * .22 + band) * 2.5
-			pts.append(Vector2(x, y))
-		# A translucent ribbon fades below each crest, not into the sky.
-		# One vertex-colored polygon per ribbon, rather than one draw per segment.
-		for point in pts:
-			haze.append(point)
-			haze_colors.append(c("#02d5ed", .13 * strength))
-		for i in range(pts.size() - 1, -1, -1):
-			haze.append(pts[i] + Vector2(0, 32))
-			haze_colors.append(c("#02d5ed", 0))
-		draw_polygon(haze, haze_colors)
-		draw_polyline(pts, c("#00cde2", .035 * strength), 28, true)
-		draw_polyline(pts, c("#00d9ec", .075 * strength), 16, true)
-		draw_polyline(pts, c("#16e7f5", .18 * strength), 8, true)
-		draw_polyline(pts, c("#35eefa", .40 * strength), 4.5, true)
-		draw_polyline(pts, c("#7ff6ff", .88 * strength), 2.1 + band * .3, true)
-	# Nine 45–70 px silhouettes; the active float gets a wide, softly faded gap.
-	for i in 9:
-		var x := fposmod(i * 113.7 + tm * (3 + i % 3), W + 100) - 50
-		var y := 428 + fmod(i * 31.3, 74) + sin(tm * .7 + i) * 3
-		var visibility := 1.0
-		if Game.mode in ["wait", "bite", "fight"]:
-			visibility = smoothstep(110.0, 165.0, absf(x - Game.fx))
-		if visibility <= .001: continue
-		var size := (45.0 + fmod(i * 9.7, 26.0)) / 2.7
-		var wiggle := sin(tm * 2.2 + i * 1.7) * size * .10
-		glow(x, y, size * 2.3, size * .9, c("#00ddf4", .45 * visibility))
-		glow(x, y, size * 1.4, size * .5, c("#51efff", .27 * visibility))
-		draw_colored_polygon(PackedVector2Array([Vector2(x + size * .7, y), Vector2(x + size * 1.7, y - size * .4 + wiggle), Vector2(x + size * 1.4, y + wiggle), Vector2(x + size * 1.7, y + size * .35 + wiggle)]), c("#56deef", .53 * visibility))
-		fill_ell(x, y, size, size * .28, c("#74e9f6", .60 * visibility), -.08)
-		stroke_ell(x, y, size, size * .28, c("#b0faff", .65 * visibility), 1, -.08, PI, TAU)
-		circle(x - size * .6, y - 1, 1, c("#e5ffff", .7 * visibility))
-	for i in 86:
+	var amp := 4.0 if wk == "storm" else (3.2 if wk == "hightide" else 1.0)
+	# Bottom light has a zero-slope fade-in, with no horizontal crest boundary.
+	var glow_top := WATER + (H - WATER) * .42
+	grad_rect(0, glow_top, W, H - glow_top, Vector2(0, glow_top), Vector2(0, H),
+		[[0.0, c("#2fe3ea", 0)], [.2, c("#2fe3ea", .025)], [.45, c("#2fe3ea", .095)], [.7, c("#2fe3ea", .20)], [1.0, c("#2fe3ea", .33)]])
+	# A light sprinkle in the distance, rather than rows of dash marks.
+	for i in 26:
+		var depth := (i + .5) / 26.0
+		var x := fmod(i * 367.31, W)
+		var y := WATER + 4 + depth * 100
+		var length := 3 + depth * 11
+		line(Vector2(x, y), Vector2(x + length, y + sin(tm * .4 + i) * .5 * amp), c("#8baabf", .035 + depth * .02), .7)
+	# Each ridge is a whole irregular arc: gaps are between ridges, never periodic cuts.
+	for ridge in wave_ridges:
+		var points := PackedVector2Array()
+		var phase: float = ridge.phase + tm * ridge.speed
+		var cx: float = ridge.x + sin(phase * .6) * (5 + ridge.depth * 9)
+		var cy: float = ridge.y + sin(phase * .8 + ridge.phase) * 2.5
+		for j in 25:
+			var u := j / 24.0
+			var bend: float = sin(u * PI * 1.5 + phase) * ridge.bend
+			bend += sin(u * TAU + ridge.phase - tm * .13) * ridge.bend * .25
+			points.append(Vector2(cx + (u - .5) * ridge.length, cy + bend * amp))
+		tapered_ridge(points, 15, c("#05cdda", ridge.brightness * .05))
+		tapered_ridge(points, 8, c("#13e2ec", ridge.brightness * .13))
+		tapered_ridge(points, 3.5, c("#4ceef4", ridge.brightness * .32))
+		tapered_ridge(points, 1.4 + ridge.depth * .6, c("#a6fdff", ridge.brightness))
+	# A soft broken moon column reaches through the same water, gradually wider.
+	for i in 39:
+		var depth := i / 38.0
+		var y := WATER + 3 + depth * (H - WATER - 8)
+		var x := 760 + sin(i * 2.3 + tm * .35) * (3 + depth * 17)
+		var width := 4 + depth * 16 + sin(i * 1.7 + tm * .5) * 3
+		var alpha := (.17 - depth * .10) * (.65 + .35 * sin(i * 1.8 + tm * .8))
+		glow(x, y, width * 1.8, 2 + depth * 2, c("#ffe4bb", alpha * .45))
+		fill_ell(x, y, width, .55 + depth * .3, c("#ffe8c6", alpha))
+	for i in 38:
+		var depth := (i + .5) / 38.0
 		var x := fmod(i * 137.53, W)
-		var y := 400 + fmod(i * 53.17, 137)
-		var twinkle := pow(absf(sin(tm * .8 + i)), 6)
-		var alpha := .22 + .62 * twinkle
-		glow(x, y, 6 + twinkle * 3, 6 + twinkle * 3, c("#10e6f5", alpha * .7))
-		circle(x, y, .75 + twinkle * .45, c("#a5faff", alpha))
-		if i % 9 == 0:
-			line(Vector2(x - 2.5, y), Vector2(x + 2.5, y), c("#bcffff", twinkle * .65), .8)
-			line(Vector2(x, y - 2.5), Vector2(x, y + 2.5), c("#bcffff", twinkle * .65), .8)
+		var y := H - 98 + depth * 94
+		var alpha := .12 + .40 * pow(absf(sin(tm * .7 + i)), 6)
+		glow(x, y, 4, 4, c("#29e4ed", alpha))
+		circle(x, y, .6, c("#adfaff", alpha))
 
 	# 물속 물고기 그림자 (대기 중)
 	if Game.mode == "wait" and Game.fish:
@@ -321,16 +345,34 @@ func draw_water(tm: float) -> void:
 # ----------------------------------------------------------------- 부두
 func draw_dock() -> void:
 	for x in [70, 150, 232]:
-		grad_rect(x, WATER - 6, 14, 96, Vector2(x, 0), Vector2(x + 14, 0), [[0.0, c("#654257")], [.35, c("#44304a")], [1.0, c("#251e34")]])
+		grad_rect(x, WATER - 6, 14, 96, Vector2(x, 0), Vector2(x + 14, 0), [[0.0, c("#b17a62")], [.22, c("#79534f")], [.6, c("#433049")], [1.0, c("#251e34")]])
+		for i in 10:
+			var ry := WATER + 96 + i * 5
+			var rx: float = x + 7 + sin(Game.clock * .8 + i * 1.7) * 5
+			var reflection := quad_pts(Vector2(rx - 8, ry), Vector2(rx, ry + sin(i + Game.clock) * 2), Vector2(rx + 7, ry - .5), 8)
+			stroke(reflection, c("#d3a282", .30 * (1 - i / 10.0)), 1.8)
 		line(Vector2(x + 3, WATER + 10), Vector2(x + 3, WATER + 88), c("#bd7880", .24), 1)
 		glow(x + 7, WATER + 90, 31, 9, c("#03dfef", .4))
 		stroke_ell(x + 7, WATER + 90, 23, 4, c("#42eaf4", .5), 1)
 		line(Vector2(x + 1, WATER + 70), Vector2(x + 1, WATER + 90), c("#65eaff", .36), 1)
-	grad_rect(0, WATER - 16, 286, 22, Vector2(0, WATER - 16), Vector2(0, WATER + 6), [[0.0, c("#ba795e")], [.2, c("#8b5860")], [.25, c("#684252")], [1.0, c("#34263b")]])
+	grad_rect(0, WATER - 16, 286, 27, Vector2(0, WATER - 16), Vector2(0, WATER + 11), [[0.0, c("#e0a475")], [.23, c("#b47859")], [.28, c("#805044")], [1.0, c("#402b35")]])
 	for x in range(14, 286, 34):
-		line(Vector2(x, WATER - 16), Vector2(x, WATER + 6), c("#291e36", .7), 1.5)
+		line(Vector2(x, WATER - 16), Vector2(x, WATER + 11), c("#291e36", .7), 1.5)
 		line(Vector2(x + 4, WATER - 11), Vector2(x + 27, WATER - 12), c("#e0a078", .25), 1)
 		circle(x + 15, WATER - 1, 1.6, c("#8d849e"))
+	line(Vector2(0, WATER - 16), Vector2(286, WATER - 16), c("#ffcc8c", .75), 1.5)
+	for i in 17:
+		var x := fmod(i * 47.3, 276)
+		line(Vector2(x, WATER - 8 + i % 4), Vector2(minf(285, x + 18), WATER - 9 + i % 4), c("#efb586", .22), .7)
+	glow(40, WATER - 13, 89, 11, c("#ffb466", .42))
+	glow(35, WATER - 13, 43, 6, c("#ffe0a0", .4))
+	# Broken lantern reflection begins below the apron and fades with distance.
+	for i in 19:
+		var ry := WATER + 16 + i * 5.5
+		var rx := 35 + sin(Game.clock * .6 + i * 1.4) * (3 + i * .2)
+		var alpha := .23 * (1 - i / 19.0)
+		glow(rx, ry, 11 + i * .2, 3, c("#ffc878", alpha * .6))
+		stroke(quad_pts(Vector2(rx - 7, ry), Vector2(rx, ry + sin(i + Game.clock) * 2), Vector2(rx + 6, ry), 8), c("#ffce86", alpha), 1.5)
 	# Amber lantern, with restrained local flicker.
 	var ly := WATER - 35
 	var flicker := .85 + .07 * sin(Game.clock * 4.1) + .04 * sin(Game.clock * 7.3)
@@ -345,11 +387,13 @@ func draw_dock() -> void:
 	fill_rrect(21, ly + 16, 28, 4, 2, c("#57394a"))
 	# Translucent tackle box; filled creel remains visible through its lid.
 	var bx := 80.0; var by := WATER - 16
-	fill_rrect(bx - 19, by - 24, 38, 24, 3, c("#a99adb", .36))
+	grad_poly(rrect(bx - 19, by - 24, 38, 24, 3), Vector2(bx, by - 24), Vector2(bx, by), [[0.0, c("#e0dcff", .50)], [.35, c("#a7a3dc", .26)], [1.0, c("#bfb9ed", .45)]])
 	stroke_rrect(bx - 19, by - 24, 38, 24, 3, c("#d3ccff", .8), 1)
 	fill_rrect(bx - 20, by - 27, 40, 7, 2, c("#bcb9f4", .45))
 	line(Vector2(bx - 18, by - 19), Vector2(bx + 18, by - 19), c("#ddd7ff", .6), 1)
 	stroke_rrect(bx - 5, by - 31, 10, 4, 2, c("#a9a6d8"), 1)
+	line(Vector2(bx - 16, by - 22), Vector2(bx - 16, by - 3), c("#fff0df", .7), 1)
+	line(Vector2(bx - 18, by - 26), Vector2(bx + 18, by - 26), c("#efedff", .85), 1)
 	fill_rrect(bx - 2, by - 20, 4, 7, 1, c("#e0d5ff", .7))
 	if not Game.S.creel.is_empty():
 		glow(bx, by - 10, 19, 10, c("#52eee9", .45))
@@ -427,14 +471,31 @@ func draw_cat(tm: float) -> void:
 	var body_w := 40 + fat * 11; var body_h := 50 + fat * 5
 	var body := ell(bx, by - body_h * 0.55 + breathe * 0.3, body_w, body_h)
 	body.remove_at(body.size() - 1)
-	grad_poly(body, Vector2(bx - 40, by - 90), Vector2(bx + 40, by), [[0.0, c("#35314f")], [.5, c("#201e36")], [1.0, c("#121326")]])
-	stroke_ell(bx, by - body_h * .55 + breathe * .3, body_w, body_h, c("#b4a2e8", .45), 1.3, 0, -1.2, .7)
+	grad_poly(body, Vector2(bx - 40, by - 90), Vector2(bx + 40, by), [[0.0, c("#3b3566")], [.35, c("#302b53")], [.72, c("#211b3b")], [1.0, c("#120f26")]])
+	stroke_ell(bx, by - body_h * .55 + breathe * .3, body_w, body_h, c("#b7a8ff", .70), 2.5, 0, -1.2, .7)
+	# Broad soft form light, then fine fur edges; outfits still draw over the body.
+	glow(bx - body_w * .28, by - body_h * .85, body_w * .65, body_h * .64, c("#8a769a", .19))
+	stroke_ell(bx, by - body_h * .55 + breathe * .3, body_w - 1, body_h - 1, c("#ffb466", .27), 3, 0, 2.6, 4.1)
+	stroke_ell(bx, by - body_h * .55 + breathe * .3, body_w - 1, body_h - 1, c("#b8a4ef", .24), 4, 0, -1.1, .55)
+	for i in 9:
+		var a := 2.6 + i * .16
+		var edge := Vector2(bx + cos(a) * body_w, by - body_h * .55 + breathe * .3 + sin(a) * body_h)
+		line(edge, edge + Vector2(-1.7, -2.2), c("#c2a0b2", .22), .7)
+	for side in [-1, 1]:
+		for i in 5:
+			var a := -.10 + i * .19
+			var edge := Vector2(bx + side * cos(a) * body_w, by - body_h * .55 + breathe * .3 + sin(a) * body_h)
+			var tuft := quad_pts(edge + Vector2(0, -3), edge + Vector2(side * 5, 1), edge + Vector2(-side, 5), 6)
+			stroke(tuft, c("#a08ab9", .32), 3.5)
+			stroke(tuft, c("#b7a8ff" if side > 0 else "#ffb466", .52 if side > 0 else .30), 1.2)
 	draw_outfit_body(Game.S.outfit, bx, by, body_w, body_h, breathe)
 
 	# 앞발
-	fill_ell(bx + 14, by - 6, 13, 8, c("#1a1b26"))
-	fill_ell(bx - 9, by - 5, 13, 8, c("#1a1b26"))
-	fill_ell(bx + 14, by - 8, 6.5, 4, c("#2c2e40"))
+	for paw in [Vector2(bx + 14, by - 6), Vector2(bx - 9, by - 5)]:
+		grad_poly(ell(paw.x, paw.y, 13, 8), paw + Vector2(-8, -7), paw + Vector2(7, 8), [[0.0, c("#51445f")], [.45, c("#2c2943")], [1.0, c("#16182c")]])
+		stroke_ell(paw.x, paw.y, 12, 7, c("#a392c9", .25), .8, 0, -2.6, -.4)
+		for toe in 2:
+			line(paw + Vector2(2 + toe * 4, 2), paw + Vector2(2 + toe * 4, 5), c("#101225", .5), .7)
 
 	# 머리
 	var hy := by - body_h - 34 + breathe
@@ -449,10 +510,19 @@ func draw_cat(tm: float) -> void:
 	var head := ell(hx, hy, hr, hr - 2)
 	head.remove_at(head.size() - 1)
 	var focus := Vector2(hx - 10, hy - 12)
-	var c0 := c("#41385b"); var c1 := c("#17172d")
+	var c0 := c("#3b3566"); var c1 := c("#120f26")
 	fan(focus, c0, head, func(p: Vector2): return c0.lerp(c1, clampf((p.distance_to(focus) - 4) / (hr + 8 - 4), 0, 1)))
 
-	stroke_ell(hx, hy, hr, hr - 2, c("#c3aff9", .65), 1.2, 0, -1.5, .55)
+	stroke_ell(hx, hy, hr, hr - 2, c("#b7a8ff", .78), 2.5, 0, -1.5, .55)
+	stroke_ell(hx, hy, hr - 1, hr - 3, c("#baa8ef", .22), 4, 0, -1.5, .55)
+	stroke_ell(hx, hy, hr - 1, hr - 3, c("#ffb466", .27), 2.5, 0, 2.5, 3.9)
+	glow(hx - 15, hy - 10, 16, 18, c("#dab092", .12))
+	for side in [-1, 1]:
+		for i in 3:
+			var edge := Vector2(hx + side * (hr - 2 - i), hy + 8 + i * 4)
+			var tuft := quad_pts(edge + Vector2(0, -3), edge + Vector2(side * 5, 0), edge + Vector2(-side * 2, 4), 6)
+			stroke(tuft, c("#a08ab9", .42), 3.5)
+			stroke(tuft, c("#b7a8ff" if side > 0 else "#ffb466", .62 if side > 0 else .36), 1.2)
 	# 눈
 	var mood := Game.cat_mood
 	var blinking := Game.blink > 0.0 and mood != "star"
@@ -469,11 +539,12 @@ func draw_cat(tm: float) -> void:
 			continue
 		var eh := 1.6 if blinking else (12.0 if mood == "alert" else 9.5)
 		glow(X, ey, 12, eh + 4, c("#d3ef5b", .22))
-		fill_ell(X, ey, 8.4, eh, c("#d8f24a"))
+		grad_poly(ell(X, ey, 8.4, eh), Vector2(X, ey - eh), Vector2(X, ey + eh), [[0.0, c("#94b746")], [.45, c("#d8f24a")], [1.0, c("#f4ef94")]])
 		if not blinking:
 			var pw := 4.6 if mood == "alert" else 2.4
 			fill_ell(X, ey, pw, eh - 1.2, c("#10131c"))
-			circle(X - 3, ey - 4, 1.9, Color(1, 1, 1, .85))
+			circle(X - 2.4, ey - 4, 3.0, Color(1, 1, 1, .98))
+			circle(X + 3, ey + 4, 1.4, c("#ffffff", .92))
 
 	# 코 & 입
 	draw_colored_polygon(PackedVector2Array([Vector2(hx, hy + 11), Vector2(hx - 4.5, hy + 7), Vector2(hx + 4.5, hy + 7)]), c("#ff9ab5"))

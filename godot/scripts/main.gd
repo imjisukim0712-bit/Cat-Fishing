@@ -54,6 +54,20 @@ static func sb(bg: Color, border := Color(0, 0, 0, 0), radius := 12, bw := 1, pa
 
 	return s
 
+# Visual-only sheen; it follows the existing Control size and never takes input.
+func glass_sheen(control: Control, radius: float) -> void:
+	control.draw.connect(func():
+		var w := control.size.x
+		var h := control.size.y
+		if w < 8 or h < 8: return
+		var r := minf(radius, minf(w, h) * .5)
+		var depth := minf(16, h * .44)
+		var points := PackedVector2Array([Vector2(r, 2), Vector2(w - r, 2), Vector2(w - 3, depth), Vector2(3, depth)])
+		control.draw_polygon(points, PackedColorArray([Color("#d5ceff24"), Color("#d5ceff24"), Color("#d5ceff00"), Color("#d5ceff00")]))
+		control.draw_line(Vector2(r, 2), Vector2(w - r, 2), Color("#eee9ff88"), 1, true)
+	)
+	control.resized.connect(control.queue_redraw)
+
 func lbl(txt: String, size := 13, col := TEXT, font: Font = null) -> Label:
 	var l := Label.new()
 	l.text = txt
@@ -119,12 +133,14 @@ func btn(txt: String, kind := "mini", cb := Callable(), disabled := false) -> Bu
 	b.add_theme_color_override("font_pressed_color", fg)
 	b.add_theme_color_override("font_disabled_color", Color("#4d566f"))
 	if cb.is_valid(): b.pressed.connect(cb)
+	if kind != "x": glass_sheen(b, radius)
 	return b
 
 func chip(content: Control, bg := PANEL, border := LINE) -> PanelContainer:
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", sb(bg, border, 999, 1, Vector4(13, 7, 13, 7)))
 	p.add_child(content)
+	glass_sheen(p, 999)
 	return p
 
 func tag(txt: String, col: Color) -> PanelContainer:
@@ -285,7 +301,8 @@ func _build_stage() -> void:
 
 	# 말풍선
 	bubble = PanelContainer.new()
-	bubble.add_theme_stylebox_override("panel", sb(Color("#272951ed"), Color("#bfb1ff"), 16, 1, Vector4(15, 12, 15, 12)))
+	bubble.add_theme_stylebox_override("panel", sb(Color("#272951de"), Color("#bfb1ff"), 16, 1, Vector4(15, 12, 15, 12)))
+	glass_sheen(bubble, 16)
 	bubble.position = Vector2(STAGE_SIZE.x * 0.21, STAGE_SIZE.y * 0.06)
 	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var bv := VBoxContainer.new()
@@ -299,11 +316,13 @@ func _build_stage() -> void:
 	bubble.add_child(bv)
 	var tail := Polygon2D.new()
 	tail.polygon = PackedVector2Array([Vector2(26, 0), Vector2(48, 0), Vector2(37, 11)])
-	tail.color = Color("#bfb1ff")
-	var tail_inner := Polygon2D.new()
-	tail_inner.polygon = PackedVector2Array([Vector2(28, -1), Vector2(46, -1), Vector2(37, 9)])
-	tail_inner.color = Color("#272951")
-	tail.add_child(tail_inner)
+	tail.color = Color("#272951de")
+	var tail_border := Line2D.new()
+	tail_border.points = PackedVector2Array([Vector2(26, 0), Vector2(37, 11), Vector2(48, 0)])
+	tail_border.width = 1
+	tail_border.default_color = Color("#bfb1ff")
+	tail_border.antialiased = true
+	tail.add_child(tail_border)
 	bubble.add_child(tail)
 	bubble.resized.connect(func(): tail.position = Vector2(0, bubble.size.y - 0.5))
 	bubble.modulate.a = 0.0
@@ -323,6 +342,7 @@ func _build_stage() -> void:
 	cc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(cc)
 	status_box = PanelContainer.new()
+	glass_sheen(status_box, 999)
 	status_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	status_label = rich(14)
 	status_box.add_child(status_label)
