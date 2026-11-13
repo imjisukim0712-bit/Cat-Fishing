@@ -3,6 +3,8 @@ extends "res://scripts/stage_draw.gd"
 
 const FIREFLIES := 10
 var flies: Array = []
+var shooting: Array = []      # 가끔 떨어지는 별똥별
+var next_star := 4.0
 
 func _ready() -> void:
 	init_brush()
@@ -33,7 +35,26 @@ func _draw() -> void:
 	# 부두 바닥에 고이는 빛
 	glow(lx + 40, WATER - 14, 170 * f, 13, Color(warm, 0.48 * f))
 	# 까미 왼쪽(랜턴 쪽) 몸을 비추는 빛
-	glow(CAT.x - 40, CAT.y - 55, 62, 74, Color(warm, 0.14 * f))
+	# 별똥별: 맑은 밤엔 가끔 하나씩 (유성우 날씨는 별도 효과)
+	var wk: String = Game.weather.key
+	if t > next_star:
+		next_star = t + randf_range(6.0, 14.0)
+		if wk in ["clear", "hightide", "meteor"]:
+			shooting.append({"x": randf_range(120, 820), "y": randf_range(20, 120), "t0": t,
+				"ang": randf_range(0.35, 0.65) * (1 if randf() < .5 else -1) + (0.0 if randf() < .5 else PI)})
+	for i in range(shooting.size() - 1, -1, -1):
+		var st: Dictionary = shooting[i]
+		var k: float = (t - float(st.t0)) / 0.9
+		if k > 1.0:
+			shooting.remove_at(i); continue
+		var ang: float = st.ang
+		var dir := Vector2(cos(ang), absf(sin(ang)))
+		var head: Vector2 = Vector2(st.x, st.y) + dir * 260.0 * k
+		var fade := sin(k * PI)
+		for j in 14:
+			var q: Vector2 = head - dir * j * 6.0
+			glow(q.x, q.y, 4.0 - j * 0.2, 4.0 - j * 0.2, Color(c("#fff1d6"), 0.5 * fade * (1.0 - j / 14.0)))
+		glow(head.x, head.y, 10, 10, Color(c("#fff4e0"), 0.6 * fade))
 	# 반딧불이
 	for fl in flies:
 		var x: float = fl.cx + sin(t * fl.sx + fl.ph) * fl.rx + sin(t * fl.sx * 2.3 + fl.ph * 1.7) * fl.rx * 0.3

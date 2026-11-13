@@ -4,6 +4,14 @@ var backdrop: Sprite2D
 var backdrop_mat: ShaderMaterial
 var pier: Sprite2D
 var cat: Node2D
+var lit_cat: ShaderMaterial
+var lit_pier: ShaderMaterial
+
+## 구름: 하늘을 천천히 지나가며, 달을 가리면 달빛(물 반사·테두리 빛)이 약해진다
+const MOON := Vector2(762, 110)
+const MOON_R := 40.0
+var clouds: Array = []
+var moon_light := 1.0
 
 func _ready() -> void:
 	init_brush()
@@ -48,10 +56,11 @@ func _ready() -> void:
 	pier.scale = Vector2.ONE * PIER_SCALE
 	pier.region_enabled = true
 	pier.region_rect = Rect2(PIER_CUT, 0, 1869 - PIER_CUT, 740)
-	var pier_material := ShaderMaterial.new()
-	pier_material.shader = load("res://shaders/pier_water.gdshader")
-	pier_material.set_shader_parameter("water_uv", (WATER - PIER_TOP) / (740 * PIER_SCALE))
-	pier.material = pier_material
+	lit_pier = ShaderMaterial.new()
+	lit_pier.shader = load("res://shaders/lit_sprite.gdshader")
+	lit_pier.set_shader_parameter("submerge", (WATER - PIER_TOP) / (740 * PIER_SCALE))
+	lit_pier.set_shader_parameter("rim_px", 4.0)
+	pier.material = lit_pier
 	add_child(pier)
 
 	var props := Node2D.new()
@@ -60,6 +69,17 @@ func _ready() -> void:
 	# 까미는 이제 그림 스프라이트라 별도 뷰포트·흐림 처리 없이 화면 해상도 그대로 그린다
 	cat = Node2D.new()
 	cat.set_script(load("res://scripts/stage_cat.gd"))
+	lit_cat = ShaderMaterial.new()
+	lit_cat.shader = load("res://shaders/lit_sprite.gdshader")
+	cat.material = lit_cat
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	for i in 5:
+		var blobs := []
+		for j in 6:
+			blobs.append(Vector3(rng.randf_range(-90, 90), rng.randf_range(-10, 10), rng.randf_range(28, 60)))
+		clouds.append({"x": rng.randf_range(-200, 1100), "y": rng.randf_range(55, 200),
+			"sp": rng.randf_range(5, 11), "a": rng.randf_range(.22, .34), "blobs": blobs})
 	add_child(cat)
 	# 랜턴 불빛·반딧불이: 빛을 '더하는' 레이어라 부두와 까미를 실제로 비춘다
 	var light := Node2D.new()
@@ -86,8 +106,10 @@ func _draw() -> void:
 	var wk: String = Game.weather.key
 	backdrop_mat.set_shader_parameter("strength", 1.7 if wk == "storm" else (1.35 if wk == "hightide" else 1.0))
 	backdrop_mat.set_shader_parameter("lantern", lantern_flicker(Game.clock))
+	update_lights()
 	pier.position = _base + Vector2(0, PIER_TOP)
 	cat.position = _base
+	draw_clouds(Game.clock)
 	draw_water(Game.clock)
 
 func draw_water(tm: float) -> void:
@@ -114,3 +136,44 @@ func draw_water(tm: float) -> void:
 	for w in Game.ripples:
 		stroke_ell(w.x, w.y, w.r, w.r * 0.30, c("#12dfea", w.a * .3), 6)
 		stroke_ell(w.x, w.y, w.r, w.r * 0.30, c("#9afaff", w.a), 1.8)
+
+## 하늘을 지나가는 구름 (달 쪽 가장자리는 달빛을 받아 밝게)
+func cloud_pos(cl: Dictionary, t: float) -> float:
+	return fmod(cl.x + t * cl.sp + 300.0, W + 600.0) - 300.0
+
+func draw_clouds(t: float) -> void:
+	var wk: String = Game.weather.key
+	var dark := wk == "storm" or wk == "rain"
+	var boost := 1.8 if dark else (1.3 if wk == "fog" else 1.0)
+	for cl in clouds:
+		var cx := cloud_pos(cl, t)
+		for b in cl.blobs:
+			var p := Vector2(cx + b.x, cl.y + b.y)
+			var lit := clampf(1.0 - p.distance_to(MOON) / 260.0, 0.0, 1.0) * moon_light
+			var base := c("#4a4270") if dark else c("#9a8fc8")
+			var col := base.lerp(c("#f2dcc0"), lit * 0.55)
+			glow(p.x, p.y, b.z * 2.0, b.z * 0.6, Color(col, minf(cl.a * boost, 0.6)))
+
+## 광원 상태 계산 → 바다·까미·부두 셰이더에 전달
+func update_lights() -> void:
+	var t := Game.clock
+	var cover := 0.0
+	for cl in clouds:
+		var cx := cloud_pos(cl, t)
+		for b in cl.blobs:
+			var d := Vector2(cx + b.x, cl.y + b.y).distance_to(MOON)
+			cover += cl.a * 2.2 * clampf(1.0 - d / (b.z * 1.4), 0.0, 1.0)
+	var wk: String = Game.weather.key
+	var weather_k := {"storm": 0.3, "rain": 0.55, "fog": 0.7}.get(wk, 1.0) as float
+	var target := clampf(1.0 - cover, 0.35, 1.0) * weather_k
+	moon_light = lerpf(moon_light, target, 0.05)
+	var flick := lantern_flicker(t)
+	var flash := Game.lightning if wk == "storm" else 0.0
+	backdrop_mat.set_shader_parameter("moon_light", moon_light)
+	var lpos := get_global_transform() * LANTERN
+	for m in [lit_cat, lit_pier]:
+		m.set_shader_parameter("lantern_pos", lpos)
+		m.set_shader_parameter("lantern", flick)
+		m.set_shader_parameter("moon_light", moon_light)
+		m.set_shader_parameter("lightning", clampf(flash, 0.0, 1.0))
+		m.set_shader_parameter("ambient", Vector3(0.86, 0.88, 1.0) * lerpf(0.82, 1.0, moon_light))
