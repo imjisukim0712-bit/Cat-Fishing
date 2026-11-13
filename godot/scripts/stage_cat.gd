@@ -11,6 +11,7 @@ const MOUTH_Y := 214.0
 const SCALE := 0.46                 # 몸 시트 → 무대 (키 331px → 약 152px)
 const PART_K := 100.0 / 154.0       # 부품 시트 → 몸 시트 (기본 눈 한 쌍 폭 154px = 머리폭의 52%)
 const TAIL_BASE := Vector2(128, 206) # 꼬리 그림에서 몸에 붙는 지점 (오른쪽 아래)
+const EYE_SPREAD := 4.5              # 눈 한 쌍 그림을 반으로 갈라 양쪽으로 더 벌리는 거리 (무대 px, 한쪽 기준)
 
 var tex := {}
 
@@ -36,6 +37,16 @@ func part(name: String, center: Vector2, k: float, mod := Color.WHITE) -> void:
 	var t: Texture2D = tex[name]
 	var size := t.get_size() * k
 	draw_texture_rect(t, Rect2(center - size / 2.0, size), false, mod)
+
+## 눈 한 쌍 그림을 좌우 반으로 나눠 spread 만큼 바깥으로 벌려 그리기
+func eyes_split(name: String, center: Vector2, k: float, spread: float) -> void:
+	var t: Texture2D = tex[name]
+	var size := t.get_size()
+	var half := Vector2(size.x / 2.0, size.y)
+	var dst := half * k
+	var top := center.y - dst.y / 2.0
+	draw_texture_rect_region(t, Rect2(Vector2(center.x - dst.x - spread, top), dst), Rect2(Vector2.ZERO, half))
+	draw_texture_rect_region(t, Rect2(Vector2(center.x + spread, top), dst), Rect2(Vector2(half.x, 0), half))
 
 func draw_cat(tm: float) -> void:
 	var fat := Game.fat_show
@@ -77,9 +88,11 @@ func draw_cat(tm: float) -> void:
 	var pk := SCALE * PART_K * (0.5 * (1.0 + sx))   # 통통해지면 얼굴도 살짝 넓게
 	var eye_pos := to_stage(Vector2(221, EYES_Y), anchor, sx, sy)
 	if eyes == "eyes_normal" or eyes == "eyes_alert":
-		glow(eye_pos.x, eye_pos.y, 26, 10, c("#d3ef5b", .16))   # 밤 고양이 눈빛
+		var eye_off := 46.0 * pk + EYE_SPREAD * sx   # 눈 그림에서 각 눈 중심은 한가운데서 ±46px
+		for side in [-1.0, 1.0]:                     # 밤 고양이 눈빛 (눈마다 따로, 사이에 띠가 생기지 않게)
+			glow(eye_pos.x + side * eye_off, eye_pos.y, 11, 10, c("#d3ef5b", .16))
 	var star_pulse := 1.0 + (sin(tm * 9) * 0.08 if mood == "star" else 0.0)
-	part(eyes, eye_pos, pk * star_pulse)
+	eyes_split(eyes, eye_pos, pk * star_pulse, EYE_SPREAD * sx)
 	var mouth := "mouth_open" if (mood == "star" or mood == "alert") else "mouth_closed"
 	part(mouth, to_stage(Vector2(221, MOUTH_Y + (6.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.9)
 
