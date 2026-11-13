@@ -56,23 +56,9 @@ func _draw() -> void:
 	pier.position = _base + Vector2(0, PIER_TOP)
 	cat.position = _base
 	draw_water(Game.clock)
-	draw_reflections(Game.clock)
 
 func draw_water(tm: float) -> void:
-	# Soft alpha stamps accent the existing painting, never replace its waves.
-	# 물 위 반짝임은 셰이더와 같은 흐름을 탄다: 모두 아래(보는 쪽)로 밀려오며 오른쪽으로 살짝 흐름.
-	# 제자리에서 제각각 깜빡이는 효과는 쓰지 않는다.
-	for i in 14:   # 달빛 기둥: 수평선에서 아래로 흘러내리는 빛 조각
-		var depth := fmod(i / 14.0 + tm * 0.05, 1.0)
-		var x := 762 + depth * 10
-		var y := WATER + 5 + depth * 122
-		var fade := sin(depth * PI)   # 생겨나고 사라질 때 부드럽게
-		glow(x, y, 8 + depth * 16, 1.2 + depth, c("#ffe8ba", .05 * fade))
-	for i in 12:   # 가까운 물결 위 빛 띠: 같은 속도로 오른쪽 아래로 흐름
-		var k := fmod(i / 12.0 + tm * 0.03, 1.0)
-		var x := fmod(i * 173.3 + tm * 9.0, W + 60) - 30
-		var y := 440 + k * 90
-		glow(x, y, 14 + k * 12, 1.6, c("#92fbff", .06 * sin(k * PI)))
+	# 물결 움직임은 전부 backdrop_water 셰이더가 그림 자체를 흘려서 표현한다 (덧그리는 빛 조각 없음)
 	# 물속 물고기 그림자 (대기 중)
 	if Game.mode == "wait" and Game.fish:
 		var prog := minf(1.0, Game.t / maxf(.1, Game.bite_at))
@@ -95,15 +81,3 @@ func draw_water(tm: float) -> void:
 	for w in Game.ripples:
 		stroke_ell(w.x, w.y, w.r, w.r * 0.30, c("#12dfea", w.a * .3), 6)
 		stroke_ell(w.x, w.y, w.r, w.r * 0.30, c("#9afaff", w.a), 1.8)
-
-
-func draw_reflections(tm: float) -> void:
-	# Reflections follow the painted post centers, below their submerged tips.
-	var bottom := PIER_TOP + 740 * PIER_SCALE
-	for source_x in [220.0, 905.0, 1585.0]:
-		for i in 9:
-			var x: float = source_x * PIER_SCALE + sin(tm * .7 + i * 1.4) * 3
-			var y := bottom - 4 + i * 4.2
-			glow(x, y, 9 + sin(i * 2.1) * 3, 1.8, c("#c5a0bf", .10 * (1 - i / 9.0)))
-	for i in 13:
-		glow(237 * PIER_SCALE + sin(tm * .7 + i) * 3, WATER + 9 + i * 5, 6 + i * .35, 1.6, c("#ffd291", .09 * (1 - i / 13.0)))
