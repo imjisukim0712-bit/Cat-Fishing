@@ -6,13 +6,13 @@
 <title>까미와 밤낚시</title>
 <style>
   :root{
-    --bg:#0c0826;
-    --panel:#1a1258;
-    --panel2:#2a2063;
-    --line:#5f4a9d;
+    --bg:#080d1a;
+    --panel:#121a30;
+    --panel2:#1b2544;
+    --line:#2c3a63;
     --gold:#ffc24a;
-    --text:#f1ecff;
-    --dim:#a99ad8;
+    --text:#e8edfb;
+    --dim:#8b98bd;
     --c-junk:#8d93a3;
     --c-common:#cfd9ef;
     --c-rare:#49a6ff;
@@ -24,7 +24,7 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;height:100dvh}
   body{
-    background:radial-gradient(1200px 700px at 50% -10%, #2a1f6b 0%, var(--bg) 60%);
+    background:radial-gradient(1200px 700px at 50% -10%, #17224a 0%, var(--bg) 60%);
     color:var(--text);
     font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,-apple-system,sans-serif;
     display:flex;align-items:center;justify-content:center;
@@ -50,7 +50,7 @@
     border-radius:999px;padding:clamp(5px,1.8vw,7px) clamp(9px,3.2vw,14px);font-size:clamp(11px,3.1vw,13px);font-weight:700;cursor:pointer;
     font-family:inherit;transition:.15s;
   }
-  button.btn:hover{background:var(--panel2);border-color:#a48cf0;transform:translateY(-1px)}
+  button.btn:hover{background:var(--panel2);border-color:#3d5091;transform:translateY(-1px)}
   button.btn:active{transform:translateY(0)}
   button.btn.gold{background:#3a2c08;border-color:#6b5216;color:var(--gold)}
   .badge{background:#e0454f;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;font-weight:800}
@@ -59,7 +59,7 @@
   #stage{
     position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;
     border:1px solid var(--line);box-shadow:0 24px 60px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.03);
-    background:#16104a;cursor:pointer;
+    background:#050914;cursor:pointer;
   }
   #scene{display:block;width:100%;height:100%}
 
@@ -72,7 +72,7 @@
   /* status line */
   #status{
     width:max-content;max-width:92%;margin:0 auto;
-    background:rgba(26,18,88,.82);border:1.5px solid #8a74d6;backdrop-filter:blur(6px);
+    background:rgba(8,12,26,.78);border:1px solid var(--line);backdrop-filter:blur(6px);
     padding:clamp(6px,1.8vw,8px) clamp(11px,4vw,18px);border-radius:999px;
     font-size:clamp(11px,3.6vw,14px);font-weight:700;white-space:normal;
     pointer-events:none;transition:.2s;text-align:center;
@@ -128,7 +128,7 @@
   @keyframes sh{from{transform:translateX(-3px)}to{transform:translateX(3px)}}
 
   /* ---------- MODALS ---------- */
-  .ovl{position:fixed;inset:0;background:rgba(10,6,34,.78);backdrop-filter:blur(5px);
+  .ovl{position:fixed;inset:0;background:rgba(4,7,16,.78);backdrop-filter:blur(5px);
     display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
   .ovl.on{display:flex}
   .modal{width:100%;max-width:560px;max-height:86vh;overflow:auto;background:var(--panel);
@@ -152,7 +152,7 @@
   .mini{border:1px solid var(--line);background:#0e1526;color:var(--text);border-radius:9px;
     padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;transition:.13s;
     display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
-  .mini:hover{background:#33287a}
+  .mini:hover{background:#22305a}
   .mini.buy{background:#2b3f1a;border-color:#4d7226;color:#c8f08a}
   .mini.buy:disabled{background:#181d2c;border-color:#28304a;color:#4d566f;cursor:not-allowed}
   .mini.sell{background:#3a2c08;border-color:#6b5216;color:var(--gold)}
@@ -164,7 +164,7 @@
   .outfit-row.locked-outfit{opacity:.45}
   .outfit-row.locked-outfit .buy{cursor:not-allowed}
 
-  .bar{height:6px;background:#120c3a;border-radius:99px;overflow:hidden;margin-top:6px}
+  .bar{height:6px;background:#0b1122;border-radius:99px;overflow:hidden;margin-top:6px}
   .bar > i{display:block;height:100%;background:linear-gradient(90deg,#4a8cff,#8ad4ff)}
 
   .tag{font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;border:1px solid currentColor}
@@ -196,7 +196,7 @@
   .foot .note{font-size:11px;color:var(--dim);flex:1}
   .keys{text-align:center;font-size:11.5px;color:var(--dim)}
   .keys b{color:var(--text)}
-  .credit{text-align:center;font-size:10px;color:#5a4c94;margin-top:2px;user-select:text}
+  .credit{text-align:center;font-size:10px;color:#3a4468;margin-top:2px;user-select:text}
   @media (max-width:560px){
     .brand small{display:none}
     #bubble{max-width:60%;left:14%}
@@ -618,33 +618,6 @@ const STARS = Array.from({length:110},()=>({
   x:Math.random()*W, y:Math.random()*(WATER-40), r:Math.random()*1.4+.35,
   ph:Math.random()*6.28, sp:.6+Math.random()*1.6
 }));
-
-/* ---- 몽환 테마 장식 데이터 (플랫 도형 + 코드 광원) ---- */
-const MOON = {x:760, y:92, r:44};
-/* 은하수: 왼쪽 아래 → 오른쪽 위로 비스듬한 띠 위에 흩뿌린 먼지 */
-const MILKY = Array.from({length:170},()=>{
-  const u = Math.random(), off = (Math.random()+Math.random()+Math.random()-1.5)*38;
-  return {x: 300 + u*360 + off*0.5, y: 250 - u*230 + off, r: Math.random()*1.1+.25,
-          a: .15+Math.random()*.45, hue: Math.random()<.5 ? '206,186,255' : '255,214,240'};
-});
-/* 구름: 납작한 원 묶음 (윗면은 코드로 하이라이트) */
-const CLOUDS = [
-  {x:140, y:186, s:1.0, sp:3.2}, {x:470, y:150, s:.75, sp:2.4},
-  {x:690, y:206, s:1.15, sp:2.8}, {x:905, y:170, s:.9, sp:3.6}
-];
-/* 물속 발광 물고기 (장식용, 실제 입질 물고기와 별개) */
-const GLOWFISH = Array.from({length:9},(_,i)=>({
-  x: Math.random()*W, y: WATER + 70 + Math.random()*(H-WATER-110),
-  s: .55 + Math.random()*.6, sp: (14+Math.random()*22) * (i%2? 1 : -1),
-  ph: Math.random()*6.28
-}));
-/* 수면 위아래로 떠다니는 플랑크톤 빛 */
-const PLANKTON = Array.from({length:60},()=>({
-  x: Math.random()*W, y: WATER + 10 + Math.random()*(H-WATER-14),
-  r: Math.random()*1.6+.4, ph: Math.random()*6.28, sp: .5+Math.random()*1.4
-}));
-/* 먼 마을 불빛 */
-const VILLAGE = [[618,300],[628,298],[652,301],[667,299],[812,296],[826,298],[838,295],[871,299],[884,297]];
 
 /* ------------------------- 게임 런타임 ------------------------- */
 const CAT = {x:186, y:WATER};      // 고양이 발밑
@@ -1133,179 +1106,64 @@ function render(time, dt){
   }
 }
 
-/* 플랫 도형 위에 코드로 빛을 얹는 헬퍼 */
-function glow(x,y,r,rgb,a){
-  const g = ctx.createRadialGradient(x,y,0,x,y,r);
-  g.addColorStop(0,`rgba(${rgb},${a})`); g.addColorStop(1,`rgba(${rgb},0)`);
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill();
-}
-function sparkle(x,y,r){
-  ctx.beginPath();
-  ctx.moveTo(x,y-r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.quadraticCurveTo(x,y,x,y+r);
-  ctx.quadraticCurveTo(x,y,x-r,y); ctx.quadraticCurveTo(x,y,x,y-r); ctx.fill();
-}
-function ridge(pts, base){
-  ctx.beginPath(); ctx.moveTo(0, base);
-  for(const p of pts) ctx.lineTo(p[0], p[1]);
-  ctx.lineTo(W, base); ctx.closePath();
-}
-
 function drawSky(t){
-  // 1) 플랫 베이스: 남보라 하늘 (#16104A → #2A2063 → #382186) — 3단 밴드를 아주 부드럽게만 이어줌
   let g = ctx.createLinearGradient(0,0,0,WATER);
-  g.addColorStop(0,'#16104a'); g.addColorStop(.5,'#1f1658'); g.addColorStop(.85,'#2a2063'); g.addColorStop(1,'#382186');
+  g.addColorStop(0,'#070c1e'); g.addColorStop(.55,'#122046'); g.addColorStop(1,'#2b3f77');
   ctx.fillStyle=g; ctx.fillRect(0,0,W,WATER);
 
-  // 2) 은하수 (코드 광원: 가산 혼합 먼지)
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.translate(480,150); ctx.rotate(-0.55); ctx.scale(1, .2);
-  const mw = ctx.createRadialGradient(0,0,0,0,0,250);   // 타원형으로 사방이 부드럽게 사라지는 띠
-  mw.addColorStop(0,'rgba(150,110,240,.20)'); mw.addColorStop(.6,'rgba(130,95,230,.08)'); mw.addColorStop(1,'rgba(120,90,220,0)');
-  ctx.fillStyle = mw; ctx.beginPath(); ctx.arc(0,0,250,0,6.2832); ctx.fill();
-  ctx.restore();
-  ctx.save(); ctx.globalCompositeOperation = 'lighter';
-  for(const d of MILKY){
-    ctx.fillStyle = `rgba(${d.hue},${d.a*(.75+.25*Math.sin(t*.8+d.x))})`;
-    ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.2832); ctx.fill();
-  }
-  ctx.restore();
-
-  // 3) 별: 작은 점 + 밝은 별은 4각 반짝이
+  // 별
   for(const s of STARS){
     const tw = .35 + .65*Math.abs(Math.sin(t*s.sp + s.ph));
     ctx.globalAlpha = tw*.9;
-    ctx.fillStyle = '#f4efff';
-    if(s.r > 1.45){ sparkle(s.x, s.y, s.r*2.6*(.7+.3*tw)); }
-    else { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill(); }
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill();
   }
   ctx.globalAlpha = 1;
 
-  // 4) 달: 플랫 원판(#E1D9CE) + 코드 광원(헤일로, 림, 크레이터 음영)
-  const {x:mx, y:my, r:mr} = MOON;
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  glow(mx,my,mr*4.2,'255,214,170',.13);
-  glow(mx,my,mr*1.9,'255,230,200',.20);
-  ctx.restore();
-  ctx.fillStyle='#f3ead9'; ctx.beginPath(); ctx.arc(mx,my,mr,0,6.2832); ctx.fill();
-  ctx.save(); ctx.beginPath(); ctx.arc(mx,my,mr,0,6.2832); ctx.clip();
-  const shade = ctx.createLinearGradient(mx-mr,my-mr,mx+mr,my+mr);
-  shade.addColorStop(0,'rgba(255,255,255,.35)'); shade.addColorStop(.55,'rgba(255,255,255,0)'); shade.addColorStop(1,'rgba(150,110,140,.30)');
-  ctx.fillStyle=shade; ctx.fillRect(mx-mr,my-mr,mr*2,mr*2);
-  ctx.fillStyle='rgba(196,176,170,.55)';
-  [[-14,-10,8],[12,6,11],[2,22,5],[20,-18,5],[-22,12,4]].forEach(c=>{
+  // 달
+  const mx=760, my=88, mr=46;
+  const halo = ctx.createRadialGradient(mx,my,mr*.6, mx,my,mr*3.4);
+  halo.addColorStop(0,'rgba(255,246,206,.30)'); halo.addColorStop(1,'rgba(255,246,206,0)');
+  ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(mx,my,mr*3.4,0,6.2832); ctx.fill();
+  ctx.fillStyle='#fff6ce'; ctx.beginPath(); ctx.arc(mx,my,mr,0,6.2832); ctx.fill();
+  ctx.fillStyle='rgba(224,214,170,.55)';
+  [[-14,-10,8],[12,6,11],[2,22,5],[20,-18,5]].forEach(c=>{
     ctx.beginPath(); ctx.arc(mx+c[0],my+c[1],c[2],0,6.2832); ctx.fill();
   });
-  ctx.restore();
 
-  // 5) 구름: 플랫 라벤더 덩어리 + 달 쪽 윗면 하이라이트
-  for(const c of CLOUDS){
-    const cx = ((c.x + t*c.sp) % (W+260)) - 130, cy = c.y, s = c.s;
-    const blobs = [[-46,6,20],[-20,-6,26],[10,-12,30],[40,-2,22],[64,8,15]];
-    const cloudPath = (dx,dy)=>{
-      ctx.beginPath();
-      for(const b of blobs){ ctx.moveTo(cx+b[0]*s+b[2]*s+dx, cy+b[1]*s+dy); ctx.arc(cx+b[0]*s+dx, cy+b[1]*s+dy, b[2]*s, 0, 6.2832); }
-      ctx.rect(cx-60*s+dx, cy+dy, 132*s, 22*s);
-    };
-    // 플랫 2톤: 전체를 하이라이트 색으로 칠한 뒤, 왼쪽 아래로 밀린 본체 색을 덮어 달 쪽(오른쪽 위) 테두리만 밝게 남김
-    ctx.save();
-    cloudPath(0,0); ctx.clip();
-    ctx.fillStyle = '#6a55bd'; ctx.fillRect(cx-90*s, cy-60*s, 190*s, 100*s);
-    ctx.fillStyle = '#41308a'; cloudPath(-3*s, 5*s); ctx.fill();
-    ctx.restore();
-  }
-
-  // 6) 산: 플랫 3겹 (#5F4A9D / #764ACD / #3a2a7e) + 달빛 림라이트
-  ridge([[0,262],[110,232],[220,256],[330,214],[450,250],[560,222],[680,252],[790,226],[900,250],[960,236]], WATER);
-  ctx.fillStyle='#5f4a9d'; ctx.fill();
-  ridge([[0,282],[90,262],[200,280],[320,254],[440,282],[580,258],[700,284],[830,262],[960,278]], WATER);
-  ctx.fillStyle='#764acd'; ctx.fill();
-  ctx.save(); ctx.clip();
-  const rim = ctx.createLinearGradient(0,252,0,300);
-  rim.addColorStop(0,'rgba(255,220,240,.0)'); rim.addColorStop(.12,'rgba(255,220,240,.18)'); rim.addColorStop(.4,'rgba(255,220,240,0)');
-  ctx.fillStyle = rim; ctx.fillRect(0,250,W,60);
-  ctx.restore();
-  ridge([[0,300],[150,290],[300,302],[470,288],[640,303],[800,292],[960,300]], WATER);
-  ctx.fillStyle='#3a2a7e'; ctx.fill();
-
-  // 7) 먼 마을 불빛 (깜빡임)
-  for(const [vx,vy] of VILLAGE){
-    const a = .65 + .35*Math.sin(t*2.3 + vx);
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    glow(vx, vy, 7, '255,200,120', .35*a);
-    ctx.restore();
-    ctx.fillStyle = `rgba(255,214,150,${a})`; ctx.fillRect(vx-1.2, vy-1.2, 2.4, 2.4);
-  }
-
-  // 8) 수평선 안개 (코드 광원)
-  const haze = ctx.createLinearGradient(0,WATER-34,0,WATER);
-  haze.addColorStop(0,'rgba(120,200,230,0)'); haze.addColorStop(1,'rgba(120,200,230,.16)');
-  ctx.fillStyle = haze; ctx.fillRect(0,WATER-34,W,34);
-}
-
-function drawGlowFish(x,y,s,dir,t,ph){
-  const sw = Math.sin(t*5+ph)*0.18;           // 꼬리 흔들기
-  ctx.save(); ctx.translate(x,y); ctx.scale(dir*s, s);
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  glow(0,0,46,'44,240,235',.22);               // 코드 광원
-  ctx.restore();
-  ctx.fillStyle='#2cf0eb';                      // 플랫 실루엣
-  ctx.beginPath(); ctx.ellipse(0,0,24,9,0,0,6.2832); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(-20,0); ctx.lineTo(-36,-10+sw*20); ctx.lineTo(-33,0); ctx.lineTo(-36,10+sw*20); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.55)';        // 등 하이라이트
-  ctx.beginPath(); ctx.ellipse(2,-3.4,14,2.6,0,0,6.2832); ctx.fill();
-  ctx.fillStyle='#054f70'; ctx.beginPath(); ctx.arc(14,-1.5,1.9,0,6.2832); ctx.fill();
-  ctx.restore();
+  // 먼 산
+  ctx.fillStyle='#0d1530';
+  ctx.beginPath(); ctx.moveTo(0,WATER);
+  const pts=[[0,268],[90,236],[170,262],[280,220],[390,258],[500,232],[610,264],[720,240],[840,266],[960,244],[960,WATER]];
+  pts.forEach((p,i)=> i? ctx.lineTo(p[0],p[1]) : ctx.lineTo(p[0],p[1]));
+  ctx.lineTo(0,WATER); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#0a1026';
+  ctx.beginPath(); ctx.moveTo(0,WATER);
+  [[0,290],[130,272],[250,292],[400,270],[540,294],[700,274],[860,296],[960,280],[960,WATER]].forEach(p=>ctx.lineTo(p[0],p[1]));
+  ctx.closePath(); ctx.fill();
 }
 
 function drawWater(t){
-  // 1) 플랫 베이스: 청록 3단 밴드 (#0895B0 / #017190 / #01587A → #054F70)
   let g = ctx.createLinearGradient(0,WATER,0,H);
-  g.addColorStop(0,'#0a8fab'); g.addColorStop(.18,'#0a7e9c'); g.addColorStop(.42,'#017190');
-  g.addColorStop(.7,'#01587a'); g.addColorStop(1,'#03344f');
+  g.addColorStop(0,'#16305e'); g.addColorStop(.5,'#0c1c3e'); g.addColorStop(1,'#060e22');
   ctx.fillStyle=g; ctx.fillRect(0,WATER,W,H-WATER);
-  // 밴드 경계 (플랫 단차 느낌)
-  ctx.fillStyle='rgba(2,40,70,.18)';
-  ctx.fillRect(0, WATER+62, W, 2); ctx.fillRect(0, WATER+132, W, 2);
 
-  // 2) 수면 반사: 산 그림자 + 달빛 기둥
-  ctx.fillStyle='rgba(56,33,134,.35)';
-  ctx.fillRect(0, WATER, W, 10);
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  for(let i=0;i<14;i++){
-    const y = WATER + 6 + i*13;
-    const wdt = 74 - i*3.4 + Math.sin(t*1.7+i)*12;
-    ctx.fillStyle=`rgba(255,226,180,${.34 - i*.018})`;
-    ctx.fillRect(MOON.x - wdt/2 + Math.sin(t*1.2+i*.8)*8, y, wdt, 3);
+  // 달 반사
+  ctx.save();
+  ctx.globalAlpha=.22;
+  for(let i=0;i<13;i++){
+    const y = WATER + 8 + i*15;
+    const wdt = 68 - i*3 + Math.sin(t*1.7+i)*13;
+    ctx.fillStyle='#ffe9a8';
+    ctx.fillRect(760 - wdt/2 + Math.sin(t*1.2+i*.8)*9, y, wdt, 3.4);
   }
   ctx.restore();
 
-  // 3) 물속 발광 물고기 (장식)
-  for(const f of GLOWFISH){
-    const span = W+120;
-    const fx = (((f.x + f.sp*t) % span) + span) % span - 60;   // 시간 기반 이동 (프레임레이트 무관)
-    const yy = f.y + Math.sin(t*.9+f.ph)*6;
-    ctx.globalAlpha = .55 + .2*Math.sin(t*1.3+f.ph);
-    drawGlowFish(fx, yy, f.s, f.sp>0?1:-1, t, f.ph);
-  }
-  ctx.globalAlpha = 1;
-
-  // 4) 플랑크톤 빛
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  for(const p of PLANKTON){
-    const a = .25 + .5*Math.abs(Math.sin(t*p.sp + p.ph));
-    const px = p.x + Math.sin(t*.4+p.ph)*6, py = p.y + Math.cos(t*.5+p.ph)*4;
-    ctx.fillStyle = `rgba(120,255,240,${a})`;
-    ctx.beginPath(); ctx.arc(px, py, p.r, 0, 6.2832); ctx.fill();
-  }
-  ctx.restore();
-
-  // 5) 물결선 (청록 하이라이트)
+  // 물결선
   const waveAmp = R.weather.key==='storm' ? 6.4 : (R.weather.key==='hightide' ? 5.2 : 3.2);
-  ctx.lineWidth=1.6;
+  ctx.strokeStyle='rgba(160,205,255,.14)'; ctx.lineWidth=1.6;
   for(let i=0;i<9;i++){
     const y = WATER + 14 + i*22;
-    ctx.strokeStyle=`rgba(170,255,250,${.20 - i*.015})`;
     ctx.beginPath();
     for(let x=0;x<=W;x+=14){
       const yy = y + Math.sin((x*0.014) + t*(1.1+i*0.16) + i)*waveAmp;
@@ -1313,12 +1171,6 @@ function drawWater(t){
     }
     ctx.stroke();
   }
-  // 수면선 발광
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  const sl = ctx.createLinearGradient(0,WATER-3,0,WATER+8);
-  sl.addColorStop(0,'rgba(120,255,240,0)'); sl.addColorStop(.4,'rgba(120,255,240,.22)'); sl.addColorStop(1,'rgba(120,255,240,0)');
-  ctx.fillStyle=sl; ctx.fillRect(0,WATER-3,W,11);
-  ctx.restore();
 
   // 물속 물고기 그림자 (대기 중)
   if(R.mode==='wait' && R.fish){
@@ -1328,7 +1180,7 @@ function drawWater(t){
     const ra = RARITY[R.fish.r];
     ctx.save();
     ctx.globalAlpha = .18 + prog*0.30;
-    ctx.fillStyle = R.fish.r==='trans' ? 'rgba(255,255,255,.95)' : (R.fish.r==='myth' ? 'rgba(255,45,58,.95)' : (R.fish.r==='legend' ? 'rgba(255,190,90,.9)' : (R.fish.r==='epic'?'rgba(180,120,255,.85)':'#02223a')));
+    ctx.fillStyle = R.fish.r==='trans' ? 'rgba(255,255,255,.95)' : (R.fish.r==='myth' ? 'rgba(255,45,58,.95)' : (R.fish.r==='legend' ? 'rgba(255,190,90,.9)' : (R.fish.r==='epic'?'rgba(180,120,255,.85)':'#000')));
     const sc = 0.6 + RORDER.indexOf(R.fish.r)*0.22;
     ctx.beginPath(); ctx.ellipse(sx, sy, 26*sc, 10*sc, Math.sin(R.t*2)*0.14, 0, 6.2832); ctx.fill();
     ctx.beginPath();
@@ -1339,62 +1191,33 @@ function drawWater(t){
 
   // 파문
   for(const w of R.ripples){
-    ctx.strokeStyle=`rgba(190,255,250,${w.a})`; ctx.lineWidth=1.8;
+    ctx.strokeStyle=`rgba(180,225,255,${w.a})`; ctx.lineWidth=1.8;
     ctx.beginPath(); ctx.ellipse(w.x, w.y, w.r, w.r*0.30, 0, 0, 6.2832); ctx.stroke();
   }
 }
 
 function drawDock(){
-  const t = R.t, top = WATER-16;
-  // 기둥 (플랫 #382335) + 물에 잠긴 부분 청록 틴트 + 기둥 반사
-  [70,150,232].forEach(x=>{
-    ctx.fillStyle='#382335'; ctx.fillRect(x, WATER-6, 14, 96);
-    ctx.fillStyle='rgba(8,149,176,.35)'; ctx.fillRect(x, WATER+6, 14, 84);
-    ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fillRect(x, WATER-6, 3, 96);
-  });
-  // 상판 (플랫 #C98854) + 윗면 하이라이트, 앞면 그림자
-  ctx.fillStyle='#c98854'; ctx.fillRect(0, top, 286, 22);
-  ctx.fillStyle='#a8683c'; ctx.fillRect(0, top+14, 286, 8);
-  ctx.fillStyle='rgba(255,230,190,.35)'; ctx.fillRect(0, top, 286, 2.5);
-  ctx.strokeStyle='#8a5530'; ctx.lineWidth=2;
-  for(let x=14;x<286;x+=34){ ctx.beginPath(); ctx.moveTo(x,top); ctx.lineTo(x,top+22); ctx.stroke(); }
-  ctx.fillStyle='#382335';
-  for(let x=31;x<286;x+=68){ ctx.beginPath(); ctx.arc(x, top+17, 2.6, 0, 6.2832); ctx.fill(); }
+  // 기둥
+  ctx.fillStyle='#2a1c12';
+  [70,150,232].forEach(x=>{ ctx.fillRect(x, WATER-6, 14, 96); });
+  // 상판
+  const g = ctx.createLinearGradient(0,WATER-18,0,WATER+8);
+  g.addColorStop(0,'#5b3d26'); g.addColorStop(1,'#33210f');
+  ctx.fillStyle=g; ctx.fillRect(0, WATER-16, 286, 22);
+  ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2;
+  for(let x=14;x<286;x+=34){ ctx.beginPath(); ctx.moveTo(x,WATER-16); ctx.lineTo(x,WATER+6); ctx.stroke(); }
+  ctx.fillStyle='rgba(255,220,160,.10)'; ctx.fillRect(0, WATER-16, 286, 3);
 
-  // 랜턴 (플랫 도형 + 코드 광원 깜빡임)
-  const lx=24, ly=top;
-  const flick = .85 + .15*Math.sin(t*9.3) * Math.sin(t*3.1+1);
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  glow(lx, ly-20, 120*flick, '255,170,90', .16);
-  glow(lx, ly-20, 40, '255,200,120', .35*flick);
-  ctx.restore();
-  // 부두 위 빛 웅덩이
-  ctx.save(); ctx.globalCompositeOperation='lighter';
-  ctx.fillStyle=`rgba(255,180,100,${.18*flick})`;
-  ctx.beginPath(); ctx.ellipse(lx+20, top+2, 70, 6, 0, 0, 6.2832); ctx.fill();
-  ctx.restore();
-  ctx.strokeStyle='#382335'; ctx.lineWidth=2.5;
-  ctx.beginPath(); ctx.arc(lx, ly-36, 7, Math.PI, 0); ctx.stroke();
-  ctx.fillStyle='#382335'; roundRect(lx-11, ly-32, 22, 4, 2); ctx.fill(); roundRect(lx-12, ly-4, 24, 4, 2); ctx.fill();
-  ctx.fillStyle=`rgb(255,${190+Math.round(30*flick)},120)`; roundRect(lx-9, ly-28, 18, 24, 4); ctx.fill();
-  ctx.fillStyle='#c98854'; ctx.beginPath(); ctx.arc(lx+1, ly-16, 6, 0, 6.2832); ctx.fill();   // 초승달 무늬
-  ctx.fillStyle=`rgb(255,${190+Math.round(30*flick)},120)`; ctx.beginPath(); ctx.arc(lx+4, ly-18, 5.4, 0, 6.2832); ctx.fill();
-
-  // 태클박스 = 어망 표시 (라벤더 플랫 상자)
-  const bx=70, by=top;
-  ctx.fillStyle='#5f4a9d'; roundRect(bx-19, by-22, 38, 22, 4); ctx.fill();
-  ctx.fillStyle='#764acd'; roundRect(bx-19, by-22, 38, 15, 4); ctx.fill();
-  ctx.fillStyle='#e1d9ce'; roundRect(bx-20, by-26, 40, 7, 3); ctx.fill();
-  ctx.strokeStyle='#e1d9ce'; ctx.lineWidth=2.4;
-  ctx.beginPath(); ctx.moveTo(bx-7, by-26); ctx.lineTo(bx-7, by-31); ctx.lineTo(bx+7, by-31); ctx.lineTo(bx+7, by-26); ctx.stroke();
-  ctx.fillStyle='#382335'; roundRect(bx-3, by-17, 6, 6, 1.5); ctx.fill();
+  // 양동이 (어망)
+  const bx=64, by=WATER-16;
+  ctx.fillStyle='#3a4a63';
+  ctx.beginPath(); ctx.moveTo(bx-17,by); ctx.lineTo(bx+17,by); ctx.lineTo(bx+13,by-26); ctx.lineTo(bx-13,by-26); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#63789b'; ctx.lineWidth=2; ctx.stroke();
   if(S.creel.length){
-    // 잡은 물고기가 있으면 상자 틈으로 청록 빛이 샘
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    glow(bx, by-24, 30, '44,240,235', .45 + .15*Math.sin(t*3));
-    ctx.restore();
-    ctx.font='13px sans-serif'; ctx.textAlign='center';
-    ctx.fillText('🐟', bx, by-33);
+    ctx.fillStyle='#7fd0ff';
+    ctx.beginPath(); ctx.ellipse(bx, by-26, 12, 4, 0,0,6.2832); ctx.fill();
+    ctx.font='13px sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#cdefff';
+    ctx.fillText('🐟', bx, by-27);
     ctx.textAlign='left';
   }
 }
@@ -1501,12 +1324,12 @@ function drawCat(t){
 
   // 꼬리
   const tw = Math.sin(t*(excited?7.5:2.1))*0.5;
-  ctx.strokeStyle='#100c30'; ctx.lineWidth=13; ctx.lineCap='round';
+  ctx.strokeStyle='#14151f'; ctx.lineWidth=13; ctx.lineCap='round';
   ctx.beginPath();
   ctx.moveTo(bx-30, by-14);
   ctx.quadraticCurveTo(bx-78, by-24 + tw*26, bx-72, by-66 + tw*18);
   ctx.stroke();
-  ctx.strokeStyle='#1e1752'; ctx.lineWidth=9;
+  ctx.strokeStyle='#22232f'; ctx.lineWidth=9;
   ctx.beginPath();
   ctx.moveTo(bx-30, by-14);
   ctx.quadraticCurveTo(bx-78, by-24 + tw*26, bx-72, by-66 + tw*18);
@@ -1515,28 +1338,18 @@ function drawCat(t){
   // 몸통
   const bodyW = 40 + fat*11, bodyH = 50 + fat*5;
   const g = ctx.createLinearGradient(bx-40, by-90, bx+40, by);
-  g.addColorStop(0,'#2a2466'); g.addColorStop(.5,'#18123f'); g.addColorStop(1,'#0e0a2a');
+  g.addColorStop(0,'#26283a'); g.addColorStop(.5,'#15161f'); g.addColorStop(1,'#0d0e15');
   ctx.fillStyle=g;
   ctx.beginPath();
   ctx.ellipse(bx, by-bodyH*0.55 + breathe*0.3, bodyW, bodyH, 0, 0, 6.2832);
   ctx.fill();
-  // 림라이트: 오른쪽 달빛(라벤더), 왼쪽 랜턴(주황)
-  {
-    const cy = by-bodyH*0.55 + breathe*0.3;
-    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
-    ctx.strokeStyle='rgba(170,140,255,.55)'; ctx.lineWidth=2.6;
-    ctx.beginPath(); ctx.ellipse(bx, cy, bodyW-1.5, bodyH-1.5, 0, -1.25, 0.35); ctx.stroke();
-    ctx.strokeStyle='rgba(255,160,80,.35)'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.ellipse(bx, cy, bodyW-1.5, bodyH-1.5, 0, 2.55, 3.55); ctx.stroke();
-    ctx.restore();
-  }
   drawCatOutfitBody(S.outfit, bx, by, bodyW, bodyH, breathe);
 
   // 앞발
-  ctx.fillStyle='#171242';
+  ctx.fillStyle='#1a1b26';
   ctx.beginPath(); ctx.ellipse(bx+14, by-6, 13, 8, 0,0,6.2832); ctx.fill();
   ctx.beginPath(); ctx.ellipse(bx-9, by-5, 13, 8, 0,0,6.2832); ctx.fill();
-  ctx.fillStyle='#2e2770';
+  ctx.fillStyle='#2c2e40';
   ctx.beginPath(); ctx.ellipse(bx+14, by-8, 6.5, 4, 0,0,6.2832); ctx.fill();
 
   // 머리
@@ -1550,15 +1363,9 @@ function drawCat(t){
   drawEar(hx+22, hy-20,  0.35-earTw, hr);
 
   const hg = ctx.createRadialGradient(hx-10, hy-12, 4, hx, hy, hr+8);
-  hg.addColorStop(0,'#2e286c'); hg.addColorStop(1,'#110d30');
+  hg.addColorStop(0,'#2b2d41'); hg.addColorStop(1,'#101119');
   ctx.fillStyle=hg;
   ctx.beginPath(); ctx.ellipse(hx, hy, hr, hr-2, 0, 0, 6.2832); ctx.fill();
-  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
-  ctx.strokeStyle='rgba(170,140,255,.6)'; ctx.lineWidth=2.4;
-  ctx.beginPath(); ctx.ellipse(hx, hy, hr-1.2, hr-3.2, 0, -1.35, 0.25); ctx.stroke();
-  ctx.strokeStyle='rgba(255,160,80,.30)'; ctx.lineWidth=2.4;
-  ctx.beginPath(); ctx.ellipse(hx, hy, hr-1.2, hr-3.2, 0, 2.7, 3.5); ctx.stroke();
-  ctx.restore();
 
   // 눈
   const mood = R.catMood;
@@ -1581,11 +1388,6 @@ function drawCat(t){
       continue;
     }
     const eh = blinking ? 1.6 : (mood==='alert' ? 12 : 9.5);
-    if(!blinking){   // 눈 발광 (밤 고양이)
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      glow(X, ey, 18, '216,242,74', .22);
-      ctx.restore();
-    }
     ctx.fillStyle='#d8f24a';
     ctx.beginPath(); ctx.ellipse(X, ey, 8.4, eh, 0,0,6.2832); ctx.fill();
     if(!blinking){
@@ -1696,9 +1498,9 @@ function drawCatOutfitHead(id,hx,hy,hr,t){
 }
 function drawEar(x,y,rot,hr){
   ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
-  ctx.fillStyle='#130f38';
+  ctx.fillStyle='#15161f';
   ctx.beginPath(); ctx.moveTo(-15,10); ctx.lineTo(0,-24); ctx.lineTo(15,8); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='#8a4a7e';
+  ctx.fillStyle='#5b3242';
   ctx.beginPath(); ctx.moveTo(-8,7); ctx.lineTo(0,-13); ctx.lineTo(8,6); ctx.closePath(); ctx.fill();
   ctx.restore();
 }
