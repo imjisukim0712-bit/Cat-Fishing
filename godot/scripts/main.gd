@@ -848,7 +848,7 @@ func _outfit_row(ico: String, nm: String, ds: String, bonus: int, equipped: bool
 		var thumb := TextureRect.new()   # 그 옷을 입은 그림 까미
 		var at := AtlasTexture.new()   # 시트 칸의 빈 여백을 잘라 고양이(모자 포함)만 크게
 		at.atlas = load("res://assets/art/kkami/body_%s.png" % ico)
-		at.region = Rect2(100, 0, 250, 430)
+		at.region = Rect2(68, 19, 309, 402)
 		thumb.texture = at
 		thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
