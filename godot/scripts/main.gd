@@ -6,13 +6,13 @@ const STAGE_POS := Vector2(20, 62)
 const STAGE_SIZE := Vector2(960, 540)
 
 # ---- 색 (원본 CSS 변수) ----
-const BG := Color("#080d1a")
-const PANEL := Color("#121a30")
-const PANEL2 := Color("#1b2544")
-const LINE := Color("#2c3a63")
+const BG := Color("#0c1027")
+const PANEL := Color("#202244e8")
+const PANEL2 := Color("#30315be8")
+const LINE := Color("#8178ba")
 const GOLD := Color("#ffc24a")
 const TEXT := Color("#e8edfb")
-const DIM := Color("#8b98bd")
+const DIM := Color("#aaaed1")
 
 var stage_frame: Panel
 var overlay: Control          # 무대 위 UI 레이어 (말풍선, 떠오르는 글자, 축하)
@@ -46,6 +46,12 @@ static func sb(bg: Color, border := Color(0, 0, 0, 0), radius := 12, bw := 1, pa
 	s.content_margin_left = pad.x; s.content_margin_top = pad.y
 	s.content_margin_right = pad.z; s.content_margin_bottom = pad.w
 	s.anti_aliasing = true
+	if bg.a > .5 and border.a > 0:
+		s.border_color = border.lightened(.08)
+		s.shadow_color = Color(border, .13)
+		s.shadow_size = 5
+		s.border_width_top = maxi(1, bw)
+
 	return s
 
 func lbl(txt: String, size := 13, col := TEXT, font: Font = null) -> Label:
@@ -84,17 +90,17 @@ func btn(txt: String, kind := "mini", cb := Callable(), disabled := false) -> Bu
 	b.focus_mode = Control.FOCUS_NONE
 	b.disabled = disabled
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var bg := Color("#0e1526"); var bd := LINE; var fg := TEXT; var hover := Color("#22305a")
+	var bg := Color("#202343e8"); var bd := LINE; var fg := TEXT; var hover := Color("#22305a")
 	var radius := 9; var pad := Vector4(10, 6, 10, 6); var size := 12
 	match kind:
 		"hud":
 			bg = PANEL; hover = PANEL2; radius = 999; pad = Vector4(13, 7, 13, 7); size = 13
 		"hud_gold":
-			bg = Color("#3a2c08"); bd = Color("#6b5216"); fg = GOLD; hover = Color("#4a3a10"); radius = 999; pad = Vector4(13, 7, 13, 7); size = 13
+			bg = Color("#45324be8"); bd = Color("#d3aa57"); fg = GOLD; hover = Color("#4a3a10"); radius = 999; pad = Vector4(13, 7, 13, 7); size = 13
 		"buy":
 			bg = Color("#2b3f1a"); bd = Color("#4d7226"); fg = Color("#c8f08a"); hover = Color("#365024")
 		"sell":
-			bg = Color("#3a2c08"); bd = Color("#6b5216"); fg = GOLD; hover = Color("#4a3a10")
+			bg = Color("#45324be8"); bd = Color("#d3aa57"); fg = GOLD; hover = Color("#4a3a10")
 		"feed":
 			bg = Color("#3a1524"); bd = Color("#7a2a45"); fg = Color("#ffb1c8"); hover = Color("#4a1d30")
 		"big_mini":
@@ -212,7 +218,7 @@ func _build_hud() -> void:
 	hud.add_child(brand)
 
 	coin_label = lbl("🪙 0", 13, GOLD, Data.font_heavy)
-	hud.add_child(chip(coin_label, Color("#1e1806"), Color("#4a3c17")))
+	hud.add_child(chip(coin_label, PANEL, LINE))
 	aff_label = lbl("💗 ♡♡♡♡♡ 0%", 13, TEXT, Data.font_heavy)
 	hud.add_child(chip(aff_label))
 	weather_label = lbl("🌙 맑음", 13, TEXT, Data.font_heavy)
@@ -279,13 +285,13 @@ func _build_stage() -> void:
 
 	# 말풍선
 	bubble = PanelContainer.new()
-	bubble.add_theme_stylebox_override("panel", sb(Color.WHITE, Color(0, 0, 0, 0), 16, 0, Vector4(15, 12, 15, 12)))
+	bubble.add_theme_stylebox_override("panel", sb(Color("#272951ed"), Color("#bfb1ff"), 16, 1, Vector4(15, 12, 15, 12)))
 	bubble.position = Vector2(STAGE_SIZE.x * 0.21, STAGE_SIZE.y * 0.06)
 	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var bv := VBoxContainer.new()
 	bv.add_theme_constant_override("separation", 3)
-	bv.add_child(lbl("까미", 11, Color("#e0454f"), Data.font_heavy))
-	bubble_text = lbl("", 14, Color("#1b2033"))
+	bv.add_child(lbl("까미  ✦", 11, Color("#ffb6df"), Data.font_heavy))
+	bubble_text = lbl("", 14, TEXT)
 	bubble_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	bubble_text.custom_minimum_size.x = 200
 	bubble_text.add_theme_constant_override("line_spacing", 4)
@@ -293,7 +299,11 @@ func _build_stage() -> void:
 	bubble.add_child(bv)
 	var tail := Polygon2D.new()
 	tail.polygon = PackedVector2Array([Vector2(26, 0), Vector2(48, 0), Vector2(37, 11)])
-	tail.color = Color.WHITE
+	tail.color = Color("#bfb1ff")
+	var tail_inner := Polygon2D.new()
+	tail_inner.polygon = PackedVector2Array([Vector2(28, -1), Vector2(46, -1), Vector2(37, 9)])
+	tail_inner.color = Color("#272951")
+	tail.add_child(tail_inner)
 	bubble.add_child(tail)
 	bubble.resized.connect(func(): tail.position = Vector2(0, bubble.size.y - 0.5))
 	bubble.modulate.a = 0.0
@@ -363,7 +373,7 @@ func _on_status(bb: String, hot: bool) -> void:
 	if hot:
 		status_box.add_theme_stylebox_override("panel", sb(Color(80 / 255.0, 10 / 255.0, 16 / 255.0, .85), Color("#e0454f"), 999, 1, Vector4(18, 8, 18, 8)))
 	else:
-		status_box.add_theme_stylebox_override("panel", sb(Color(8 / 255.0, 12 / 255.0, 26 / 255.0, .78), LINE, 999, 1, Vector4(18, 8, 18, 8)))
+		status_box.add_theme_stylebox_override("panel", sb(Color("#232c55e8"), Color("#a6baff"), 999, 1, Vector4(18, 8, 18, 8)))
 	if status_tween: status_tween.kill()
 	status_box.scale = Vector2.ONE
 	if hot:

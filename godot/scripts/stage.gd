@@ -9,12 +9,38 @@ const CAT := Vector2(186, 318)
 const ROD_HAND := Vector2(186 + 34, 318 - 96)
 
 var stars: Array = []
+var mountains: Array[PackedVector2Array] = []
+var glow_texture: GradientTexture2D
 var _base := Vector2.ZERO      # 화면 흔들림 오프셋
 
 func _ready() -> void:
-	for i in 110:
-		stars.append({"x": randf() * W, "y": randf() * (WATER - 40), "r": randf() * 1.4 + .35,
-			"ph": randf() * TAU, "sp": .6 + randf() * 1.6})
+	# Local deterministic visual seed: decoration never consumes gameplay randomness.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 307
+	for i in 90:
+		stars.append({"x": rng.randf() * W, "y": rng.randf() * (WATER - 40), "r": rng.randf_range(.35, .9),
+			"ph": rng.randf() * TAU, "sp": rng.randf_range(.3, .7)})
+	for layer in 5:
+		var pts := PackedVector2Array([Vector2(0, WATER)])
+		for x in range(0, 969, 8):
+			var y := 219.0 + layer * 19 + sin(x * .013 + layer * 1.7) * (15 - layer)
+			y += sin(x * .031 + layer) * 4 + rng.randf_range(-1.4, 1.4)
+			pts.append(Vector2(x, y))
+		pts.append(Vector2(W, WATER))
+		mountains.append(pts)
+	var gradient := Gradient.new()
+	gradient.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, .25), Color(1, 1, 1, 0)])
+	gradient.offsets = PackedFloat32Array([0, .35, 1])
+	glow_texture = GradientTexture2D.new()
+	glow_texture.gradient = gradient
+	glow_texture.fill = GradientTexture2D.FILL_RADIAL
+	glow_texture.fill_from = Vector2(.5, .5)
+	glow_texture.fill_to = Vector2(1, .5)
+	glow_texture.width = 128
+	glow_texture.height = 128
+
+func glow(x: float, y: float, rx: float, ry: float, color: Color) -> void:
+	draw_texture_rect(glow_texture, Rect2(x - rx, y - ry, rx * 2, ry * 2), false, color)
 
 func _process(_d: float) -> void:
 	queue_redraw()
@@ -147,8 +173,8 @@ func text(s: String, x: float, y: float, size: int, col: Color, align := HORIZON
 	draw_string(f, pos, s, align, 600 if align != HORIZONTAL_ALIGNMENT_LEFT else -1, size, col)
 
 func panel(x: float, y: float, w: float, h: float) -> void:
-	fill_rrect(x, y, w, h, 14, rgba(8, 12, 26, .72))
-	stroke_rrect(x, y, w, h, 14, rgba(60, 80, 140, .7), 1.5)
+	fill_rrect(x, y, w, h, 14, rgba(19, 23, 49, .94))
+	stroke_rrect(x, y, w, h, 14, rgba(159, 149, 224, .85), 1.5)
 
 # ================================================================= 렌더
 func _draw() -> void:
@@ -178,51 +204,96 @@ func _draw() -> void:
 
 # ----------------------------------------------------------------- 하늘
 func draw_sky(tm: float) -> void:
-	grad_rect(0, 0, W, WATER, Vector2(0, 0), Vector2(0, WATER), [[0.0, c("#070c1e")], [.55, c("#122046")], [1.0, c("#2b3f77")]])
-
-	# 별
+	grad_rect(0, 0, W, WATER, Vector2.ZERO, Vector2(0, WATER), [[0.0, c("#101631")], [.55, c("#252d59")], [1.0, c("#62608a")]])
 	for s in stars:
-		var tw := .35 + .65 * absf(sin(tm * s.sp + s.ph))
-		circle(s.x, s.y, s.r, Color(1, 1, 1, tw * .9))
-
-	# 달
-	var mx := 760.0; var my := 88.0; var mr := 46.0
-	radial(mx, my, mr * .6, mr * 3.4, rgba(255, 246, 206, .30), rgba(255, 246, 206, 0))
-	circle(mx, my, mr, c("#fff6ce"))
-	for cr in [[-14, -10, 8], [12, 6, 11], [2, 22, 5], [20, -18, 5]]:
-		circle(mx + cr[0], my + cr[1], cr[2], rgba(224, 214, 170, .55))
-
-	# 먼 산
-	var p := PackedVector2Array([Vector2(0, WATER)])
-	for q in [[0, 268], [90, 236], [170, 262], [280, 220], [390, 258], [500, 232], [610, 264], [720, 240], [840, 266], [960, 244], [960, WATER]]:
-		p.append(Vector2(q[0], q[1]))
-	draw_colored_polygon(p, c("#0d1530"))
-	p = PackedVector2Array([Vector2(0, WATER)])
-	for q in [[0, 290], [130, 272], [250, 292], [400, 270], [540, 294], [700, 274], [860, 296], [960, 280], [960, WATER]]:
-		p.append(Vector2(q[0], q[1]))
-	draw_colored_polygon(p, c("#0a1026"))
+		circle(s.x, s.y, s.r, c("#d7d9ff", .22 + .28 * absf(sin(tm * s.sp + s.ph))))
+	var mx := 760.0; var my := 88.0; var mr := 36.0
+	# Smooth cream disc: four soft craters, no procedural speckle.
+	glow(mx, my, mr * 1.6, mr * 1.6, c("#ffe3b0", .18))
+	var moon := ell(mx, my, mr, mr)
+	moon.remove_at(moon.size() - 1)
+	grad_poly(moon, Vector2(mx - mr, my), Vector2(mx + mr, my),
+		[[0.0, c("#fff5d4")], [.55, c("#fff0c3")], [1.0, c("#e8d6a5")]])
+	for crater in [Vector4(-12, -9, 10, 8), Vector4(11, 5, 13, 11), Vector4(-4, 19, 7, 6), Vector4(16, -16, 6, 5)]:
+		glow(mx + crater.x, my + crater.y, crater.z, crater.w, c("#a48e61", .18))
+	stroke_ell(mx, my, mr, mr, c("#fff9df", .42), 1)
+	var colors := ["#555780", "#494e78", "#3b436c", "#30385f", "#292f54"]
+	for layer in mountains.size():
+		draw_colored_polygon(mountains[layer], c(colors[layer]))
+		var y := 244.0 + layer * 16
+		grad_rect(0, y, W, 30, Vector2(0, y), Vector2(0, y + 30), [[0.0, c("#aba0ca", 0)], [.6, c("#aba0ca", .055)], [1.0, c("#aba0ca", 0)]])
+	for i in 21:
+		var x := 340.0 + fmod(i * 137.7, 590)
+		var y := WATER - 4 - fmod(i * 3.3, 7)
+		circle(x, y, .7, c("#ffc58a", .30))
+		glow(x, y, 4, 2, c("#ffc58a", .12))
 
 # ----------------------------------------------------------------- 물
 func draw_water(tm: float) -> void:
-	grad_rect(0, WATER, W, H - WATER, Vector2(0, WATER), Vector2(0, H), [[0.0, c("#16305e")], [.5, c("#0c1c3e")], [1.0, c("#060e22")]])
+	grad_rect(0, WATER, W, H - WATER, Vector2(0, WATER), Vector2(0, H), [[0.0, c("#101c38")], [.33, c("#09243a")], [.65, c("#07344b")], [1.0, c("#08263f")]])
 
-	# 달 반사
-	for i in 13:
-		var y := WATER + 8 + i * 15
-		var wdt := 68 - i * 3 + sin(tm * 1.7 + i) * 13
-		draw_rect(Rect2(760 - wdt / 2 + sin(tm * 1.2 + i * .8) * 9, y, wdt, 3.4), c("#ffe9a8", .22))
-
-	# 물결선
+	# Quiet distant water; broken, narrow cream reflection.
+	for i in 24:
+		var y := WATER + 3 + i * 6.3
+		var wdt := 8 + i * .8 + sin(tm * .6 + i * 2.1) * 6
+		fill_ell(760 + sin(i * 1.8 + tm * .4) * 7, y, wdt, .7, c("#ffe0b7", .24 - i * .007))
 	var wk: String = Game.weather.key
-	var amp := 6.4 if wk == "storm" else (5.2 if wk == "hightide" else 3.2)
-	for i in 9:
-		var y := WATER + 14 + i * 22
+	var amp := 6.4 if wk == "storm" else (5.2 if wk == "hightide" else 2.0)
+	for i in 15:
 		var pts := PackedVector2Array()
-		var x := 0.0
-		while x <= W:
-			pts.append(Vector2(x, y + sin(x * 0.014 + tm * (1.1 + i * 0.16) + i) * amp))
-			x += 14
-		draw_polyline(pts, rgba(160, 205, 255, .14), 1.6, true)
+		for x in range(0, 969, 12):
+			pts.append(Vector2(x, WATER + 6 + i * 14 + sin(x * .014 + tm * .45 + i) * amp))
+		draw_polyline(pts, c("#839ed5", .07), 1, true)
+	# Layered alpha glow is local to the near water (Compatibility / Web).
+	for band in 3:
+		var pts := PackedVector2Array()
+		var haze := PackedVector2Array()
+		var haze_colors := PackedColorArray()
+		var strength := .65 + band * .16
+		for x in range(0, 969, 8):
+			var y := 402 + band * 54 + sin(x * .012 + tm * .35 + band * 2) * (9 + band * 3)
+			y += sin(x * .027 - tm * .22 + band) * 2.5
+			pts.append(Vector2(x, y))
+		# A translucent ribbon fades below each crest, not into the sky.
+		# One vertex-colored polygon per ribbon, rather than one draw per segment.
+		for point in pts:
+			haze.append(point)
+			haze_colors.append(c("#02d5ed", .13 * strength))
+		for i in range(pts.size() - 1, -1, -1):
+			haze.append(pts[i] + Vector2(0, 32))
+			haze_colors.append(c("#02d5ed", 0))
+		draw_polygon(haze, haze_colors)
+		draw_polyline(pts, c("#00cde2", .035 * strength), 28, true)
+		draw_polyline(pts, c("#00d9ec", .075 * strength), 16, true)
+		draw_polyline(pts, c("#16e7f5", .18 * strength), 8, true)
+		draw_polyline(pts, c("#35eefa", .40 * strength), 4.5, true)
+		draw_polyline(pts, c("#7ff6ff", .88 * strength), 2.1 + band * .3, true)
+	# Nine 45–70 px silhouettes; the active float gets a wide, softly faded gap.
+	for i in 9:
+		var x := fposmod(i * 113.7 + tm * (3 + i % 3), W + 100) - 50
+		var y := 428 + fmod(i * 31.3, 74) + sin(tm * .7 + i) * 3
+		var visibility := 1.0
+		if Game.mode in ["wait", "bite", "fight"]:
+			visibility = smoothstep(110.0, 165.0, absf(x - Game.fx))
+		if visibility <= .001: continue
+		var size := (45.0 + fmod(i * 9.7, 26.0)) / 2.7
+		var wiggle := sin(tm * 2.2 + i * 1.7) * size * .10
+		glow(x, y, size * 2.3, size * .9, c("#00ddf4", .45 * visibility))
+		glow(x, y, size * 1.4, size * .5, c("#51efff", .27 * visibility))
+		draw_colored_polygon(PackedVector2Array([Vector2(x + size * .7, y), Vector2(x + size * 1.7, y - size * .4 + wiggle), Vector2(x + size * 1.4, y + wiggle), Vector2(x + size * 1.7, y + size * .35 + wiggle)]), c("#56deef", .53 * visibility))
+		fill_ell(x, y, size, size * .28, c("#74e9f6", .60 * visibility), -.08)
+		stroke_ell(x, y, size, size * .28, c("#b0faff", .65 * visibility), 1, -.08, PI, TAU)
+		circle(x - size * .6, y - 1, 1, c("#e5ffff", .7 * visibility))
+	for i in 86:
+		var x := fmod(i * 137.53, W)
+		var y := 400 + fmod(i * 53.17, 137)
+		var twinkle := pow(absf(sin(tm * .8 + i)), 6)
+		var alpha := .22 + .62 * twinkle
+		glow(x, y, 6 + twinkle * 3, 6 + twinkle * 3, c("#10e6f5", alpha * .7))
+		circle(x, y, .75 + twinkle * .45, c("#a5faff", alpha))
+		if i % 9 == 0:
+			line(Vector2(x - 2.5, y), Vector2(x + 2.5, y), c("#bcffff", twinkle * .65), .8)
+			line(Vector2(x, y - 2.5), Vector2(x, y + 2.5), c("#bcffff", twinkle * .65), .8)
 
 	# 물속 물고기 그림자 (대기 중)
 	if Game.mode == "wait" and Game.fish:
@@ -237,35 +308,53 @@ func draw_water(tm: float) -> void:
 			"legend": col = rgba(255, 190, 90, .9)
 			"epic": col = rgba(180, 120, 255, .85)
 			_: col = Color(0, 0, 0, 1)
-		col.a *= .18 + prog * 0.30
+		col.a *= .40 + prog * 0.40
 		var sc := 0.6 + Data.RORDER.find(r) * 0.22
 		fill_ell(sx, sy, 26 * sc, 10 * sc, col, sin(Game.t * 2) * 0.14)
 		draw_colored_polygon(PackedVector2Array([Vector2(sx + 24 * sc, sy), Vector2(sx + 38 * sc, sy - 9 * sc), Vector2(sx + 38 * sc, sy + 9 * sc)]), col)
 
 	# 파문
 	for w in Game.ripples:
-		stroke_ell(w.x, w.y, w.r, w.r * 0.30, rgba(180, 225, 255, w.a), 1.8)
+		stroke_ell(w.x, w.y, w.r, w.r * 0.30, c("#12dfea", w.a * .3), 6)
+		stroke_ell(w.x, w.y, w.r, w.r * 0.30, c("#9afaff", w.a), 1.8)
 
 # ----------------------------------------------------------------- 부두
 func draw_dock() -> void:
 	for x in [70, 150, 232]:
-		draw_rect(Rect2(x, WATER - 6, 14, 96), c("#2a1c12"))
-	grad_rect(0, WATER - 16, 286, 22, Vector2(0, WATER - 18), Vector2(0, WATER + 8), [[0.0, c("#5b3d26")], [1.0, c("#33210f")]])
-	var x := 14.0
-	while x < 286:
-		line(Vector2(x, WATER - 16), Vector2(x, WATER + 6), Color(0, 0, 0, .35), 2)
-		x += 34
-	draw_rect(Rect2(0, WATER - 16, 286, 3), rgba(255, 220, 160, .10))
-
-	# 양동이 (어망)
-	var bx := 64.0; var by := WATER - 16
-	var bucket := PackedVector2Array([Vector2(bx - 17, by), Vector2(bx + 17, by), Vector2(bx + 13, by - 26), Vector2(bx - 13, by - 26)])
-	draw_colored_polygon(bucket, c("#3a4a63"))
-	bucket.append(bucket[0])
-	draw_polyline(bucket, c("#63789b"), 2, true)
+		grad_rect(x, WATER - 6, 14, 96, Vector2(x, 0), Vector2(x + 14, 0), [[0.0, c("#654257")], [.35, c("#44304a")], [1.0, c("#251e34")]])
+		line(Vector2(x + 3, WATER + 10), Vector2(x + 3, WATER + 88), c("#bd7880", .24), 1)
+		glow(x + 7, WATER + 90, 31, 9, c("#03dfef", .4))
+		stroke_ell(x + 7, WATER + 90, 23, 4, c("#42eaf4", .5), 1)
+		line(Vector2(x + 1, WATER + 70), Vector2(x + 1, WATER + 90), c("#65eaff", .36), 1)
+	grad_rect(0, WATER - 16, 286, 22, Vector2(0, WATER - 16), Vector2(0, WATER + 6), [[0.0, c("#ba795e")], [.2, c("#8b5860")], [.25, c("#684252")], [1.0, c("#34263b")]])
+	for x in range(14, 286, 34):
+		line(Vector2(x, WATER - 16), Vector2(x, WATER + 6), c("#291e36", .7), 1.5)
+		line(Vector2(x + 4, WATER - 11), Vector2(x + 27, WATER - 12), c("#e0a078", .25), 1)
+		circle(x + 15, WATER - 1, 1.6, c("#8d849e"))
+	# Amber lantern, with restrained local flicker.
+	var ly := WATER - 35
+	var flicker := .85 + .07 * sin(Game.clock * 4.1) + .04 * sin(Game.clock * 7.3)
+	glow(35, ly, 45, 49, c("#ffb34e", .38 * flicker))
+	fill_ell(35, WATER - 15, 31, 4, c("#ffc46b", .2))
+	stroke_ell(35, ly - 21, 9, 12, c("#dba56e"), 1)
+	fill_rrect(24, ly - 19, 22, 36, 5, c("#513948"))
+	grad_poly(rrect(27, ly - 15, 16, 28, 4), Vector2(27, ly), Vector2(43, ly), [[0.0, c("#9c694b")], [.5, c("#ffd47e")], [1.0, c("#a16c54")]])
+	glow(35, ly + 1, 12, 19, c("#ffda81", flicker))
+	fill_ell(35, ly + 4, 3, 7, c("#fff2bc"))
+	stroke_rrect(24, ly - 19, 22, 36, 5, c("#ffd590", .8), 1)
+	fill_rrect(21, ly + 16, 28, 4, 2, c("#57394a"))
+	# Translucent tackle box; filled creel remains visible through its lid.
+	var bx := 80.0; var by := WATER - 16
+	fill_rrect(bx - 19, by - 24, 38, 24, 3, c("#a99adb", .36))
+	stroke_rrect(bx - 19, by - 24, 38, 24, 3, c("#d3ccff", .8), 1)
+	fill_rrect(bx - 20, by - 27, 40, 7, 2, c("#bcb9f4", .45))
+	line(Vector2(bx - 18, by - 19), Vector2(bx + 18, by - 19), c("#ddd7ff", .6), 1)
+	stroke_rrect(bx - 5, by - 31, 10, 4, 2, c("#a9a6d8"), 1)
+	fill_rrect(bx - 2, by - 20, 4, 7, 1, c("#e0d5ff", .7))
 	if not Game.S.creel.is_empty():
-		fill_ell(bx, by - 26, 12, 4, c("#7fd0ff"))
-		text("🐟", bx, by - 27, 13, c("#cdefff"), HORIZONTAL_ALIGNMENT_CENTER, Data.font_regular)
+		glow(bx, by - 10, 19, 10, c("#52eee9", .45))
+		fill_ell(bx - 2, by - 9, 8, 3, c("#a7fff1", .9))
+		draw_colored_polygon(PackedVector2Array([Vector2(bx + 4, by - 9), Vector2(bx + 11, by - 13), Vector2(bx + 11, by - 5)]), c("#a7fff1", .9))
 
 # ----------------------------------------------------------------- 낚싯줄 & 찌
 func draw_line_and_float(tm: float) -> void:
@@ -298,6 +387,14 @@ func draw_line_and_float(tm: float) -> void:
 	draw_float(fx, dy, tm)
 
 func draw_float(x: float, y: float, tm: float) -> void:
+	glow(x, y + 6, 61, 19, c("#00dbef", .65))
+	glow(x, y + 6, 26, 8, c("#77faff", .52))
+	for i in 3:
+		var radius := 13.0 + fmod(tm * 10 + i * 13, 39)
+		var fade := 1 - (radius - 13) / 39
+		stroke_ell(x, y + 6, radius, radius * .22, c("#00dbea", fade * .22), 7)
+		stroke_ell(x, y + 6, radius, radius * .22, c("#28eefa", fade * .4), 3.5)
+		stroke_ell(x, y + 6, radius, radius * .22, c("#adfcff", fade * .88), 1.6)
 	var lv: int = Game.S.upg.float
 	var top_col := c("#ff3ba0") if lv >= 7 else (c("#ffb020") if lv >= 5 else (c("#ff7a18") if lv >= 3 else c("#e64545")))
 	line(Vector2(x, y - 26), Vector2(x, y - 9), c("#f4f7ff"), 2)   # 안테나
@@ -323,13 +420,15 @@ func draw_cat(tm: float) -> void:
 	var tw := sin(tm * (7.5 if excited else 2.1)) * 0.5
 	var tail := quad_pts(Vector2(bx - 30, by - 14), Vector2(bx - 78, by - 24 + tw * 26), Vector2(bx - 72, by - 66 + tw * 18))
 	stroke(tail, c("#14151f"), 13, true)
-	stroke(tail, c("#22232f"), 9, true)
+	stroke(tail, c("#61537f"), 11, true)
+	stroke(tail, c("#29263e"), 8, true)
 
 	# 몸통
 	var body_w := 40 + fat * 11; var body_h := 50 + fat * 5
 	var body := ell(bx, by - body_h * 0.55 + breathe * 0.3, body_w, body_h)
 	body.remove_at(body.size() - 1)
-	grad_poly(body, Vector2(bx - 40, by - 90), Vector2(bx + 40, by), [[0.0, c("#26283a")], [.5, c("#15161f")], [1.0, c("#0d0e15")]])
+	grad_poly(body, Vector2(bx - 40, by - 90), Vector2(bx + 40, by), [[0.0, c("#35314f")], [.5, c("#201e36")], [1.0, c("#121326")]])
+	stroke_ell(bx, by - body_h * .55 + breathe * .3, body_w, body_h, c("#b4a2e8", .45), 1.3, 0, -1.2, .7)
 	draw_outfit_body(Game.S.outfit, bx, by, body_w, body_h, breathe)
 
 	# 앞발
@@ -350,9 +449,10 @@ func draw_cat(tm: float) -> void:
 	var head := ell(hx, hy, hr, hr - 2)
 	head.remove_at(head.size() - 1)
 	var focus := Vector2(hx - 10, hy - 12)
-	var c0 := c("#2b2d41"); var c1 := c("#101119")
+	var c0 := c("#41385b"); var c1 := c("#17172d")
 	fan(focus, c0, head, func(p: Vector2): return c0.lerp(c1, clampf((p.distance_to(focus) - 4) / (hr + 8 - 4), 0, 1)))
 
+	stroke_ell(hx, hy, hr, hr - 2, c("#c3aff9", .65), 1.2, 0, -1.5, .55)
 	# 눈
 	var mood := Game.cat_mood
 	var blinking := Game.blink > 0.0 and mood != "star"
@@ -368,6 +468,7 @@ func draw_cat(tm: float) -> void:
 			draw_arc(Vector2(X, ey + 9), 8, PI * 0.15, PI * 0.85, 16, c("#c9d3ea"), 3, true)
 			continue
 		var eh := 1.6 if blinking else (12.0 if mood == "alert" else 9.5)
+		glow(X, ey, 12, eh + 4, c("#d3ef5b", .22))
 		fill_ell(X, ey, 8.4, eh, c("#d8f24a"))
 		if not blinking:
 			var pw := 4.6 if mood == "alert" else 2.4
@@ -407,8 +508,9 @@ func draw_ear(x: float, y: float, rot: float) -> void:
 	for i in 3:
 		outer[i] = o + outer[i].rotated(rot)
 		inner[i] = o + inner[i].rotated(rot)
-	draw_colored_polygon(outer, c("#15161f"))
-	draw_colored_polygon(inner, c("#5b3242"))
+	draw_colored_polygon(outer, c("#201e36"))
+	stroke(PackedVector2Array([outer[0], outer[1], outer[2]]), c("#ad89cf", .65), 1.2)
+	draw_colored_polygon(inner, c("#815078"))
 
 func draw_star_eye(x: float, y: float, r: float) -> void:
 	var pts := PackedVector2Array()
@@ -522,14 +624,14 @@ func draw_weather_fx(tm: float) -> void:
 	var key: String = Game.weather.key
 	if key == "rain":
 		for d in Game.rain:
-			line(Vector2(d.x, d.y), Vector2(d.x - d.len * 0.32, d.y + d.len), rgba(190, 220, 255, .45), 1.4, true)
+			line(Vector2(d.x, d.y), Vector2(d.x - d.len * 0.32, d.y + d.len), rgba(179, 181, 231, .38), 1.4, true)
 	if key == "fog":
 		for i in 3:
 			var y := WATER - 70 + i * 55 + sin(tm * 0.35 + i) * 10
-			var mid := rgba(210, 225, 240, 0.12 + 0.05 * sin(tm * 0.5 + i))
-			grad_rect(0, y - 40, W, 80, Vector2(0, y - 40), Vector2(0, y + 40), [[0.0, rgba(210, 225, 240, 0)], [.5, mid], [1.0, rgba(210, 225, 240, 0)]])
+			var mid := rgba(179, 170, 211, 0.12 + 0.05 * sin(tm * 0.5 + i))
+			grad_rect(0, y - 40, W, 80, Vector2(0, y - 40), Vector2(0, y + 40), [[0.0, rgba(179, 170, 211, 0)], [.5, mid], [1.0, rgba(179, 170, 211, 0)]])
 	if key == "hightide":
-		draw_rect(Rect2(0, WATER - 14, W, 14 + sin(tm * 1.4) * 3), rgba(80, 160, 255, .10))
+		draw_rect(Rect2(0, WATER - 14, W, 14 + sin(tm * 1.4) * 3), rgba(71, 200, 215, .13))
 	if key == "meteor":
 		for m in Game.meteors:
 			var k: float = 1 - m.t / m.life
