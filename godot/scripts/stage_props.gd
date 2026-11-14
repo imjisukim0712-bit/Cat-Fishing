@@ -47,14 +47,21 @@ func draw_line_and_float(tm: float) -> void:
 	draw_float(fx, dy, tm)
 
 func draw_float(x: float, y: float, tm: float) -> void:
-	glow(x, y + 6, 61, 19, c("#00dbef", .65))
-	glow(x, y + 6, 26, 8, c("#77faff", .52))
-	for i in 3:
-		var radius := 13.0 + fmod(tm * 10 + i * 13, 39)
-		var fade := 1 - (radius - 13) / 39
-		stroke_ell(x, y + 6, radius, radius * .22, c("#00dbea", fade * .22), 7)
-		stroke_ell(x, y + 6, radius, radius * .22, c("#28eefa", fade * .4), 3.5)
-		stroke_ell(x, y + 6, radius, radius * .22, c("#adfcff", fade * .88), 1.6)
+	# 찌 주변 물결 고리·빛은 찌가 물에 떠 있을 때만 (던지는 중·감아올리는 중엔 없음).
+	# 수면(WATER) 높이에 그리고, 착수 직후엔 빠르게 퍼지며 나타난다.
+	var on_water := Game.mode in ["wait", "bite", "fight"]
+	if on_water:
+		var since := Game.t if Game.mode == "wait" else 10.0
+		var appear := clampf(since / 0.35, 0.0, 1.0)
+		var wy := WATER + 2
+		glow(x, wy, 61 * appear, 19 * appear, c("#00dbef", .65 * appear))
+		glow(x, wy, 26, 8, c("#77faff", .52 * appear))
+		for i in 3:
+			var radius := 13.0 + fmod(tm * 10 + i * 13, 39)
+			var fade := (1 - (radius - 13) / 39) * appear
+			stroke_ell(x, wy, radius, radius * .22, c("#00dbea", fade * .22), 7)
+			stroke_ell(x, wy, radius, radius * .22, c("#28eefa", fade * .4), 3.5)
+			stroke_ell(x, wy, radius, radius * .22, c("#adfcff", fade * .88), 1.6)
 	var lv: int = Game.S.upg.float
 	var top_col := c("#ff3ba0") if lv >= 7 else (c("#ffb020") if lv >= 5 else (c("#ff7a18") if lv >= 3 else c("#e64545")))
 	line(Vector2(x, y - 26), Vector2(x, y - 9), c("#f4f7ff"), 2)   # 안테나
