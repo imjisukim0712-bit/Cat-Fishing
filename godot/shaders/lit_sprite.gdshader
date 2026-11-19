@@ -16,6 +16,7 @@ uniform float rim_px = 0.0;                 // (호환용)
 uniform float submerge = 0.0;               // 부두용: 물에 잠기는 높이(UV). 0 이면 사용 안 함
 uniform vec3 sea_col = vec3(0.10, 0.36, 0.52);
 uniform vec3 line_col = vec3(0.24, 0.14, 0.27);
+uniform vec3 fur_shift = vec3(0.0);        // 어두운 털을 이만큼 밝힘 (선·명암 차이는 유지)
 uniform float outline_px = 0.0;            // 0 보다 크면 그림 바깥에 자주색 두들 테두리 (텍스처 픽셀)
 
 varying vec2 world;
@@ -38,6 +39,8 @@ void fragment() {
 		c = mix(edge, vec4(c.rgb, 1.0), c.a);
 		c.a = max(c.a, edge.a);
 	}
+	float lum = dot(c.rgb, vec3(0.3, 0.5, 0.2));
+	c.rgb += fur_shift * (1.0 - smoothstep(0.2, 0.4, lum)) * step(0.001, c.a);
 	float dist = length(lantern_pos - world);
 	float fall = lantern * (1.0 - smoothstep(lantern_radius * 0.25, lantern_radius, dist));
 

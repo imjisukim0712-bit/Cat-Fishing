@@ -34,6 +34,8 @@ var pdir := 1.0
 var last_power := 0.0
 var fx := 0.0
 var fy := WATER
+## 찌가 떨어지는 수면 높이: 수평선(WATER)보다 아래 바다 위. 멀리 던질수록 수평선 쪽(원근)
+var surf := WATER + 40.0
 var cast_from := Vector2.ZERO
 var cast_to := Vector2.ZERO
 var bite_at := 0.0
@@ -224,7 +226,8 @@ func do_cast() -> void:
 	last_power = power
 	mode = "cast"; t = 0.0
 	cast_from = rod_tip()
-	cast_to = Vector2(400 + power * 470, WATER - 4)
+	surf = WATER + 46.0 - power * 22.0
+	cast_to = Vector2(400 + power * 470, surf - 4)
 	Sfx.cast()
 	set_status("휘이잉—")
 
@@ -247,7 +250,7 @@ func start_bite() -> void:
 	cat_mood = "alert"; mood_t = 0.0
 	set_status("[b]지금!![/b] 챔질!", true)
 	Sfx.bite()
-	splash(fx, WATER, 10, 1.0)
+	splash(fx, surf, 10, 1.0)
 
 func hook_it() -> void:
 	var ra: Dictionary = Data.RARITY[fish.r]
@@ -294,7 +297,7 @@ func fail() -> void:
 	var nm: String = fish.n if fish else "뭔가"
 	set_status("놓쳤다… [color=#ffc24a]%s[/color]이(가) 도망갔어요" % nm)
 	Sfx.escape()
-	splash(fx, WATER, 14, 1.2)
+	splash(fx, surf, 14, 1.2)
 	fish = null; fight = null
 	if randf() < 0.45:
 		cat_say(["괜찮아. 물고기는 많고 내 잠은 짧아.", "봤어? 방금 걔가 너 비웃고 갔어.", "난 원래 저 정도 크기는 안 먹어. (거짓말)"].pick_random(), 3.2)
@@ -309,7 +312,7 @@ func succeed() -> void:
 	S.dex[f.id] = d
 	save()
 	Sfx.catch_s()
-	splash(fx, WATER, 18, 1.4)
+	splash(fx, surf, 18, 1.4)
 
 func show_result(f: Dictionary) -> void:
 	pending_fish = f
@@ -319,7 +322,7 @@ func show_result(f: Dictionary) -> void:
 		legendary_party(f)
 	elif f.r == "epic":
 		flash = 0.5; shake = 10
-		burst(fx, WATER - 40, 40, ["#b06bff", "#e0b3ff", "#ffffff"])
+		burst(fx, surf - 40, 40, ["#b06bff", "#e0b3ff", "#ffffff"])
 		Sfx.fanfare()
 		pop_text("영웅 등급!", 50, 40, Color("#d7a6ff"))
 	else:
@@ -642,9 +645,9 @@ func _process(delta: float) -> void:
 			fx = cast_from.x + (cast_to.x - cast_from.x) * k
 			fy = cast_from.y + (cast_to.y - cast_from.y) * k - sin(k * PI) * 150
 			if k >= 1.0:
-				splash(fx, WATER, 12, 1.0); Sfx.noise(.22, .11); after_splash()
+				splash(fx, surf, 12, 1.0); Sfx.noise(.22, .11); after_splash()
 		"wait":
-			fy = WATER - 4
+			fy = surf - 4
 			if t >= bite_at: start_bite()
 		"bite":
 			if t >= bite_win:

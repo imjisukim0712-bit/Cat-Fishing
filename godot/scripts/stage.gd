@@ -66,7 +66,10 @@ func _ready() -> void:
 	cat.set_script(load("res://scripts/stage_cat.gd"))
 	lit_cat = ShaderMaterial.new()
 	lit_cat.shader = load("res://shaders/lit_sprite.gdshader")
-	lit_cat.set_shader_parameter("outline_px", 6.0)
+	# 까만 까미가 밤하늘에 묻히지 않게: 털을 살짝 보랏빛 숯색으로 밝히고, 밝은 라벤더 스티커 테두리
+	lit_cat.set_shader_parameter("outline_px", 7.0)
+	lit_cat.set_shader_parameter("line_col", Color("#c3b3f2"))
+	lit_cat.set_shader_parameter("fur_shift", Vector3(0.10, 0.08, 0.17))
 	cat.material = lit_cat
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
@@ -118,7 +121,7 @@ func draw_water(tm: float) -> void:
 	if Game.mode == "wait" and Game.fish:
 		var prog := minf(1.0, Game.t / maxf(.1, Game.bite_at))
 		var sx := Game.fx + (1 - prog) * (180.0 if Game.fx > W / 2 else -180.0) * cos(Game.t * 1.6)
-		var sy := WATER + 70 - prog * 40
+		var sy := Game.surf + 44 - prog * 30
 		var r: String = Game.fish.r
 		var col: Color
 		match r:

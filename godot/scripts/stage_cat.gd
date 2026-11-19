@@ -12,10 +12,16 @@ const MOUTH_Y := 260.0
 const NECK_Y := 282.0
 const SCALE := 0.49                 # 몸 시트 → 무대 (키 346px → 약 170px, 시안 M6 크기)
 const PART_K := 140.0 / 225.0       # 부품 시트 → 몸 시트 (눈 한 쌍 폭 225px → 140px, 머리폭의 59% — 땡그랗고 큰 눈)
-const TAIL_BASE := Vector2(116, 200) # 꼬리 그림에서 몸에 붙는 지점 (아래쪽 끝)
+const TAIL_BASE := Vector2(128, 212)   # 꼬리 그림(테두리용 여백 12px 포함)에서 몸에 붙는 지점 # 꼬리 그림에서 몸에 붙는 지점 (아래쪽 끝)
 const EYE_SPREAD := 3.0              # 눈 한 쌍 그림을 반으로 갈라 양쪽으로 더 벌리는 거리 (무대 px, 한쪽 기준)
 
 var tex := {}
+## 눈·입은 테두리 셰이더가 없는 별도 층에 그린다 (얼굴 부품 둘레에 라벤더 테두리가 생기지 않게)
+var face: Node2D
+var face_jobs: Array[Callable] = []
+
+func _draw_face() -> void:
+	for job in face_jobs: job.call()
 
 func _ready() -> void:
 	init_brush()
@@ -23,9 +29,14 @@ func _ready() -> void:
 	for o in OUTFITS: tex["body_" + o] = load(ART + "body_%s.png" % o)
 	for n in ["eyes_sassy", "eyes_normal", "eyes_alert", "eyes_closed", "eyes_happy", "eyes_sad", "eyes_star", "mouth_closed", "mouth_open", "tail", "paw"]:
 		tex[n] = load(ART + n + ".png")
+	face = Node2D.new()
+	face.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	face.draw.connect(_draw_face)
+	add_child(face)
 
 func _process(_delta: float) -> void:
 	queue_redraw()
+	if face: face.queue_redraw()
 
 func _draw() -> void:
 	draw_cat(Game.clock)
@@ -34,23 +45,26 @@ func _draw() -> void:
 func to_stage(cell: Vector2, anchor: Vector2, sx: float, sy: float) -> Vector2:
 	return anchor + Vector2((cell.x - CELL_ANCHOR.x) * SCALE * sx, (cell.y - CELL_ANCHOR.y) * SCALE * sy)
 
-## 부품을 중심 기준으로 그리기
-func part(name: String, center: Vector2, k: float, mod := Color.WHITE) -> void:
+## 부품을 중심 기준으로 그리기 (ci: 그릴 캔버스 — 기본은 몸 층)
+func part(name: String, center: Vector2, k: float, mod := Color.WHITE, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
 	var t: Texture2D = tex[name]
 	var size := t.get_size() * k
-	draw_texture_rect(t, Rect2(center - size / 2.0, size), false, mod)
+	ci.draw_texture_rect(t, Rect2(center - size / 2.0, size), false, mod)
 
 ## 눈 한 쌍 그림을 좌우 반으로 나눠 spread 만큼 바깥으로 벌려 그리기
-func eyes_split(name: String, center: Vector2, k: float, spread: float) -> void:
+func eyes_split(name: String, center: Vector2, k: float, spread: float, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
 	var t: Texture2D = tex[name]
 	var size := t.get_size()
 	var half := Vector2(size.x / 2.0, size.y)
 	var dst := half * k
 	var top := center.y - dst.y / 2.0
-	draw_texture_rect_region(t, Rect2(Vector2(center.x - dst.x - spread, top), dst), Rect2(Vector2.ZERO, half))
-	draw_texture_rect_region(t, Rect2(Vector2(center.x + spread, top), dst), Rect2(Vector2(half.x, 0), half))
+	ci.draw_texture_rect_region(t, Rect2(Vector2(center.x - dst.x - spread, top), dst), Rect2(Vector2.ZERO, half))
+	ci.draw_texture_rect_region(t, Rect2(Vector2(center.x + spread, top), dst), Rect2(Vector2(half.x, 0), half))
 
 func draw_cat(tm: float) -> void:
+	face_jobs.clear()
 	var fat := Game.fat_show
 	var excited := Game.mode == "bite" or Game.mode == "fight"
 	var jitter := sin(tm * 26) * 1.6 if excited else 0.0
@@ -92,9 +106,9 @@ func draw_cat(tm: float) -> void:
 	var star_pulse := 1.0 + (sin(tm * 9) * 0.08 if mood == "star" else 0.0)
 	if eyes == "eyes_sassy": star_pulse = 1.15
 	if mood == "alert": star_pulse = 1.1   # 입질: 눈이 더 동그랗게 커짐
-	eyes_split(eyes, eye_pos, pk * star_pulse, EYE_SPREAD * sx)
+	face_jobs.append(eyes_split.bind(eyes, eye_pos, pk * star_pulse, EYE_SPREAD * sx, face))
 	var mouth := "mouth_open" if (mood == "star" or mood == "alert") else ""
-	if mouth != "": part(mouth, to_stage(Vector2(223, MOUTH_Y + (6.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.62)
+	if mouth != "": face_jobs.append(part.bind(mouth, to_stage(Vector2(223, MOUTH_Y + (6.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.62, Color.WHITE, face))
 
 	# 목도리 (레벨업 훈장 느낌)
 	if Game.S.upg.charm > 1:

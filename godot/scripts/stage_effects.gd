@@ -106,7 +106,7 @@ func draw_fight_bar(_tm: float) -> void:
 	text("초록 구간에서 클릭 / 스페이스 · 3번 빗나가면 도망가요", x + w / 2, y + h + 20, 12, c("#6e5a8c"), HORIZONTAL_ALIGNMENT_CENTER)
 
 func draw_bite_mark(tm: float) -> void:
-	var x := Game.fx; var y := WATER - 58
+	var x := Game.fx; var y := Game.surf - 58
 	var s := 1.0 + sin(tm * 22) * 0.12
 	xf(Vector2(x, y), 0.0, Vector2(s, s))
 	draw_colored_polygon(PackedVector2Array([Vector2(0, -31), Vector2(16, 13), Vector2(-16, 13)]), c("#3d2346"))

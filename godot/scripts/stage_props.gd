@@ -39,13 +39,13 @@ func draw_line_and_float(tm: float) -> void:
 	if mode == "wait":
 		var near_nibble := absf(Game.t - Game.nibble) < 0.35
 		bob = sin(tm * 2.2) * 2.2 + (sin(tm * 30) * 4.5 if near_nibble else 0.0)
-		if near_nibble and randf() < 0.16: Game.ripples.append({"x": fx, "y": WATER, "r": 4.0, "a": .4})
+		if near_nibble and randf() < 0.16: Game.ripples.append({"x": fx, "y": Game.surf, "r": 4.0, "a": .4})
 	elif mode == "bite":
 		bob = 12 + sin(tm * 36) * 4    # 찌가 쑥 들어감
 	elif mode == "fight":
 		bob = 8 + sin(tm * 22) * 6
 		fx = Game.fx + sin(tm * 7) * 16
-		if randf() < 0.25: Game.ripples.append({"x": fx, "y": WATER, "r": 5.0, "a": .35})
+		if randf() < 0.25: Game.ripples.append({"x": fx, "y": Game.surf, "r": 5.0, "a": .35})
 	var dy := fy + bob
 	# 낚싯줄 (늘어짐)
 	var sag := 6.0 if (mode == "fight" or mode == "bite") else 26.0
@@ -54,12 +54,12 @@ func draw_line_and_float(tm: float) -> void:
 
 func draw_float(x: float, y: float, tm: float) -> void:
 	# 찌 주변 물결 고리·빛은 찌가 물에 떠 있을 때만 (던지는 중·감아올리는 중엔 없음).
-	# 수면(WATER) 높이에 그리고, 착수 직후엔 빠르게 퍼지며 나타난다.
+	# 찌가 떠 있는 수면(Game.surf) 높이에 그리고, 착수 직후엔 빠르게 퍼지며 나타난다.
 	var on_water := Game.mode in ["wait", "bite", "fight"]
 	if on_water:
 		var since := Game.t if Game.mode == "wait" else 10.0
 		var appear := clampf(since / 0.35, 0.0, 1.0)
-		var wy := WATER + 2
+		var wy := Game.surf + 2
 		for i in 3:
 			var radius := 13.0 + fmod(tm * 10 + i * 13, 39)
 			var fade := (1 - (radius - 13) / 39) * appear
