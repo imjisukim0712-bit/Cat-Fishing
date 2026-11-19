@@ -8,8 +8,13 @@ var lit_cat: ShaderMaterial
 var lit_pier: ShaderMaterial
 
 ## 구름: 하늘을 천천히 지나가며, 달을 가리면 달빛(물 반사·테두리 빛)이 약해진다
-const MOON := Vector2(762, 110)
-const MOON_R := 40.0
+const MOON := Vector2(751, 111)
+const MOON_R := 49.0
+## 배경 그림에서 수평선(가운데) 높이: 이 줄이 무대의 WATER 에 맞춰진다
+const BD_HORIZON := 553.0
+const SEA_LINE := Color("#fff4d6")
+const MOON_DASH := Color("#ffe066")
+var waves: Array = []
 var clouds: Array = []
 var moon_light := 1.0
 
@@ -22,7 +27,7 @@ func _ready() -> void:
 	backdrop.texture = bd_tex
 	backdrop.centered = false
 	backdrop.show_behind_parent = true
-	backdrop.scale = Vector2(W / bd_tex.get_width(), (941.0 * WATER / 548.0) / bd_tex.get_height())
+	backdrop.scale = Vector2(W / bd_tex.get_width(), WATER / BD_HORIZON)
 	backdrop_mat = ShaderMaterial.new()
 	backdrop_mat.shader = load("res://shaders/backdrop_water.gdshader")
 	backdrop.material = backdrop_mat
@@ -55,11 +60,10 @@ func _ready() -> void:
 	pier.centered = false
 	pier.scale = Vector2.ONE * PIER_SCALE
 	pier.region_enabled = true
-	pier.region_rect = Rect2(PIER_CUT, 0, 1869 - PIER_CUT, 740)
+	pier.region_rect = Rect2(PIER_CUT, 0, PIER_IMG_W - PIER_CUT, PIER_IMG_H)
 	lit_pier = ShaderMaterial.new()
 	lit_pier.shader = load("res://shaders/lit_sprite.gdshader")
-	lit_pier.set_shader_parameter("submerge", (WATER - PIER_TOP) / (740 * PIER_SCALE))
-	lit_pier.set_shader_parameter("rim_px", 4.0)
+	lit_pier.set_shader_parameter("submerge", PIER_WATERLINE / PIER_IMG_H)
 	pier.material = lit_pier
 	add_child(pier)
 
@@ -74,19 +78,22 @@ func _ready() -> void:
 	cat.material = lit_cat
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
-	for i in 5:
+	for i in 4:
 		var blobs := []
-		for j in 6:
-			blobs.append(Vector3(rng.randf_range(-90, 90), rng.randf_range(-10, 10), rng.randf_range(28, 60)))
-		clouds.append({"x": rng.randf_range(-200, 1100), "y": rng.randf_range(55, 200),
-			"sp": rng.randf_range(5, 11), "a": rng.randf_range(.22, .34), "blobs": blobs})
+		var n := rng.randi_range(3, 5)
+		for j in n:
+			var u := (j - (n - 1) / 2.0)
+			blobs.append(Vector3(u * rng.randf_range(15, 20), -rng.randf_range(0, 12) * (1.0 - absf(u) / n * 1.4), rng.randf_range(13, 21) * (1.0 - absf(u) / n * 0.6)))
+		clouds.append({"x": rng.randf_range(-100, 1000), "y": rng.randf_range(40, 175),
+			"sp": rng.randf_range(4, 9), "a": 1.0, "blobs": blobs})
+	# 바다 물결 낙서: 수평선 쪽에서 생겨 보는 쪽으로 밀려오며 오른쪽으로 조금씩 흘러감
+	for i in 18:
+		waves.append({"d0": float(i) / 18.0 + rng.randf_range(-0.02, 0.02), "x0": rng.randf_range(0, W + 240),
+			"len": rng.randf_range(0.8, 1.25), "ph": rng.randf() * TAU})
 	add_child(cat)
 	# 랜턴 불빛·반딧불이: 빛을 '더하는' 레이어라 부두와 까미를 실제로 비춘다
 	var light := Node2D.new()
 	light.set_script(load("res://scripts/stage_light.gd"))
-	var add := CanvasItemMaterial.new()
-	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	light.material = add
 	add_child(light)
 	var effects := Node2D.new()
 	effects.set_script(load("res://scripts/stage_effects.gd"))
@@ -113,7 +120,9 @@ func _draw() -> void:
 	draw_water(Game.clock)
 
 func draw_water(tm: float) -> void:
-	# 물결 움직임은 전부 backdrop_water 셰이더가 그림 자체를 흘려서 표현한다 (덧그리는 빛 조각 없음)
+	# 너울 줄무늬·반짝이는 backdrop_water 셰이더, 물결 낙서와 달빛 점선은 여기서 그린다
+	draw_moon_path(tm)
+	draw_waves(tm)
 	# 물속 물고기 그림자 (대기 중)
 	if Game.mode == "wait" and Game.fish:
 		var prog := minf(1.0, Game.t / maxf(.1, Game.bite_at))
@@ -132,27 +141,64 @@ func draw_water(tm: float) -> void:
 		fill_ell(sx, sy, 26 * sc, 10 * sc, col, sin(Game.t * 2) * 0.14)
 		draw_colored_polygon(PackedVector2Array([Vector2(sx + 24 * sc, sy), Vector2(sx + 38 * sc, sy - 9 * sc), Vector2(sx + 38 * sc, sy + 9 * sc)]), col)
 
-	# 파문
+	# 파문: 크림색 두들 고리
 	for w in Game.ripples:
-		stroke_ell(w.x, w.y, w.r, w.r * 0.30, c("#12dfea", w.a * .3), 6)
-		stroke_ell(w.x, w.y, w.r, w.r * 0.30, c("#9afaff", w.a), 1.8)
+		stroke_ell(w.x, w.y, w.r, w.r * 0.30, Color(SEA_LINE, minf(1.0, w.a * 1.6)), 2.2)
 
 ## 하늘을 지나가는 구름 (달 쪽 가장자리는 달빛을 받아 밝게)
 func cloud_pos(cl: Dictionary, t: float) -> float:
-	return fmod(cl.x + t * cl.sp + 300.0, W + 600.0) - 300.0
+	return fmod(cl.x + t * cl.sp + 150.0, W + 300.0) - 150.0
 
 func draw_clouds(t: float) -> void:
+	# 두들 구름: 진한 보라 테두리 원을 먼저, 그 위에 채움 원을 겹쳐 하나의 윤곽선이 되게
 	var wk: String = Game.weather.key
 	var dark := wk == "storm" or wk == "rain"
-	var boost := 1.8 if dark else (1.3 if wk == "fog" else 1.0)
+	var fill := c("#4a3f7a") if dark else c("#6b5bb2")
+	var hi := c("#5a4f8e") if dark else c("#8574c9")
+	var edge := c("#2b1f4c")
 	for cl in clouds:
 		var cx := cloud_pos(cl, t)
+		var bob := sin(t * 0.4 + cl.y) * 2.0
 		for b in cl.blobs:
-			var p := Vector2(cx + b.x, cl.y + b.y)
-			var lit := clampf(1.0 - p.distance_to(MOON) / 260.0, 0.0, 1.0) * moon_light
-			var base := c("#4a4270") if dark else c("#9a8fc8")
-			var col := base.lerp(c("#f2dcc0"), lit * 0.55)
-			glow(p.x, p.y, b.z * 2.0, b.z * 0.6, Color(col, minf(cl.a * boost, 0.6)))
+			circle(cx + b.x, cl.y + b.y + bob, b.z + 2.6, edge)
+		for b in cl.blobs:
+			circle(cx + b.x, cl.y + b.y + bob, b.z, fill)
+		for b in cl.blobs:
+			circle(cx + b.x - b.z * 0.25, cl.y + b.y + bob - b.z * 0.3, b.z * 0.42, hi)
+
+## 달빛 길: 노란 점선이 줄마다 다른 박자로 늘었다 줄었다, 좌우로 살랑
+func draw_moon_path(t: float) -> void:
+	var k := clampf(0.35 + 0.65 * moon_light, 0.0, 1.0)
+	var col := Color(MOON_DASH, k)
+	for i in 9:
+		var y := WATER + 7.0 + i * 5.0 + i * i * 0.55
+		var base := (34.0 - i * 2.4) * (0.55 + 0.45 * sin(t * 1.9 + i * 1.37))
+		var sway := sin(t * 1.15 + i * 0.83) * (3.0 + i * 0.8)
+		var pairs := 2 if i % 2 == 1 else 1
+		for j in pairs:
+			var off := 0.0 if pairs == 1 else (-1.0 if j == 0 else 1.0) * (16.0 + i * 1.2)
+			var cx := MOON.x + sway + off
+			var half := base * (0.6 if pairs == 2 else 1.0) * 0.5
+			if half < 1.0: continue
+			line(Vector2(cx - half, y), Vector2(cx + half, y), col, 3.0 + i * 0.18, true)
+
+## 물결 낙서: 깊이 d(0 수평선 → 1 화면 아래)를 따라 보는 쪽으로 밀려오며 커지고, 출렁이며 오른쪽으로 흐름
+func draw_waves(t: float) -> void:
+	var sp := 1.6 if Game.weather.key == "storm" else (1.3 if Game.weather.key == "hightide" else 1.0)
+	for w in waves:
+		var d: float = fmod(w.d0 + t * 0.028 * sp, 1.0)
+		var sc := 0.22 + 1.05 * d
+		var y := WATER + 6.0 + (H - WATER + 10.0) * d * d
+		var x: float = fmod(w.x0 + t * 9.0 * sp * sc, W + 240.0) - 120.0
+		var a := smoothstep(0.0, 0.08, d) * (1.0 - smoothstep(0.88, 1.0, d))
+		if a <= 0.02: continue
+		var length: float = 62.0 * sc * w.len
+		var amp := 3.2 * sc
+		var pts := PackedVector2Array()
+		for i in 13:
+			var u := i / 12.0
+			pts.append(Vector2(x + (u - 0.5) * length, y + sin(u * TAU * 1.5 + w.ph + t * 2.4 * sp) * amp))
+		draw_polyline(pts, Color(SEA_LINE, a), 1.3 + 2.0 * sc, true)
 
 ## 광원 상태 계산 → 바다·까미·부두 셰이더에 전달
 func update_lights() -> void:
@@ -162,7 +208,7 @@ func update_lights() -> void:
 		var cx := cloud_pos(cl, t)
 		for b in cl.blobs:
 			var d := Vector2(cx + b.x, cl.y + b.y).distance_to(MOON)
-			cover += cl.a * 2.2 * clampf(1.0 - d / (b.z * 1.4), 0.0, 1.0)
+			cover += 0.9 * clampf(1.0 - d / (b.z + MOON_R), 0.0, 1.0)
 	var wk: String = Game.weather.key
 	var weather_k := {"storm": 0.3, "rain": 0.55, "fog": 0.7}.get(wk, 1.0) as float
 	var target := clampf(1.0 - cover, 0.35, 1.0) * weather_k
@@ -176,4 +222,4 @@ func update_lights() -> void:
 		m.set_shader_parameter("lantern", flick)
 		m.set_shader_parameter("moon_light", moon_light)
 		m.set_shader_parameter("lightning", clampf(flash, 0.0, 1.0))
-		m.set_shader_parameter("ambient", Vector3(0.86, 0.88, 1.0) * lerpf(0.82, 1.0, moon_light))
+		m.set_shader_parameter("ambient", Vector3.ONE * lerpf(0.86, 1.0, moon_light))

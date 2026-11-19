@@ -1,13 +1,19 @@
 extends Node2D
 ## Shared visual geometry; no gameplay state updates.
 ## 부두 그림 배치: 폭 400px (약한 캐스팅 최소 지점 x=400 과 겹치지 않는 최대 폭)
-const PIER_SCALE := 400.0 / 1869.0
-const PIER_TOP := 318.0 - 16.0 - 232.0 * PIER_SCALE
-## 그림 왼쪽 끝마구리(모서리 깎인 부분)를 잘라내 부두가 화면 밖으로 이어지는 것처럼 보이게
-const PIER_CUT := 64.0
+## 두들 부두 그림(1928x793): 상판 윗면 y=165, 앞면 아래 y=284, 랜턴 (187,135), 상자 (305,143)
+const PIER_IMG_W := 1928.0
+const PIER_IMG_H := 793.0
+## 그림 왼쪽 끝마구리 테두리를 잘라내 부두가 화면 밖으로 이어지는 것처럼 보이게
+const PIER_CUT := 10.0
+const PIER_SCALE := 400.0 / (PIER_IMG_W - PIER_CUT)
+const PIER_TOP := 318.0 - 16.0 - 165.0 * PIER_SCALE
 const PIER_SHIFT := -PIER_CUT * PIER_SCALE   # 잘라낸 만큼 그림 속 위치가 왼쪽으로 이동
-## 부두 그림 속 랜턴 유리 중심 (무대 좌표)
-const LANTERN := Vector2(237.0 * PIER_SCALE - PIER_CUT * PIER_SCALE, 318.0 - 16.0 - 232.0 * PIER_SCALE + 150.0 * PIER_SCALE)
+## 기둥이 물에 잠기는 높이 (그림 픽셀) — 부두는 가까이 있어 수면선이 수평선보다 아래
+const PIER_WATERLINE := 380.0
+## 부두 그림 속 랜턴 불꽃 중심 (무대 좌표)
+const LANTERN := Vector2(187.0 * PIER_SCALE + PIER_SHIFT, PIER_TOP + 135.0 * PIER_SCALE)
+const CREEL_BOX := Vector2(305.0 * PIER_SCALE + PIER_SHIFT, PIER_TOP + 143.0 * PIER_SCALE)
 
 ## 랜턴 불꽃 밝기: 여러 주기를 섞어 불규칙하게 일렁임 (0.7~1.1)
 static func lantern_flicker(t: float) -> float:
@@ -157,6 +163,6 @@ func text(s: String, x: float, y: float, size: int, col: Color, align := HORIZON
 	draw_string(f, pos, s, align, 600 if align != HORIZONTAL_ALIGNMENT_LEFT else -1, size, col)
 
 func panel(x: float, y: float, w: float, h: float) -> void:
-	fill_rrect(x, y, w, h, 14, rgba(19, 23, 49, .94))
-	stroke_rrect(x, y, w, h, 14, rgba(159, 149, 224, .85), 1.5)
+	fill_rrect(x, y, w, h, 14, c("#d6c9f3"))
+	stroke_rrect(x, y, w, h, 14, c("#3d2346"), 2.5)
 

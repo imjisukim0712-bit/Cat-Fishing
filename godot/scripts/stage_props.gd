@@ -11,10 +11,16 @@ func _draw() -> void:
 	_base = get_parent()._base
 	xf()
 	if not Game.S.creel.is_empty():
-		var box := Vector2(449 * PIER_SCALE + PIER_SHIFT, PIER_TOP + 182 * PIER_SCALE)
-		glow(box.x, box.y + 5, 15, 9, c("#64eee9", .38))
-		fill_ell(box.x - 1, box.y + 6, 5, 2, c("#b7fff4", .7))
-		draw_colored_polygon(PackedVector2Array([box + Vector2(3, 6), box + Vector2(7, 3), box + Vector2(7, 9)]), c("#b7fff4", .6))
+		var box := CREEL_BOX
+		# 상자에 물고기가 있으면 위로 작은 반짝이가 톡톡
+		var k := fmod(Game.clock * 0.8, 1.0)
+		var r := 4.0 * sin(k * PI)
+		var p := box + Vector2(8, -12 - k * 6)
+		var pts := PackedVector2Array()
+		for i in 8:
+			var a := i * PI / 4.0 - PI / 2.0
+			pts.append(p + Vector2(cos(a), sin(a)) * (r if i % 2 == 0 else r * 0.32))
+		if r > 0.5: draw_colored_polygon(pts, c("#fff4d6"))
 	draw_line_and_float(Game.clock)
 
 func draw_line_and_float(tm: float) -> void:
@@ -43,7 +49,7 @@ func draw_line_and_float(tm: float) -> void:
 	var dy := fy + bob
 	# 낚싯줄 (늘어짐)
 	var sag := 6.0 if (mode == "fight" or mode == "bite") else 26.0
-	stroke(quad_pts(tip, Vector2((tip.x + fx) / 2, maxf(tip.y, dy) + sag), Vector2(fx, dy)), rgba(225, 240, 255, .55), 1.3)
+	stroke(quad_pts(tip, Vector2((tip.x + fx) / 2, maxf(tip.y, dy) + sag), Vector2(fx, dy)), rgba(255, 244, 214, .75), 1.4)
 	draw_float(fx, dy, tm)
 
 func draw_float(x: float, y: float, tm: float) -> void:
@@ -54,21 +60,22 @@ func draw_float(x: float, y: float, tm: float) -> void:
 		var since := Game.t if Game.mode == "wait" else 10.0
 		var appear := clampf(since / 0.35, 0.0, 1.0)
 		var wy := WATER + 2
-		glow(x, wy, 61 * appear, 19 * appear, c("#00dbef", .65 * appear))
-		glow(x, wy, 26, 8, c("#77faff", .52 * appear))
+		fill_ell(x, wy, 24 * appear, 6 * appear, c("#2b7aa6", .9 * appear))   # 찌 아래 밝은 물 자국
 		for i in 3:
 			var radius := 13.0 + fmod(tm * 10 + i * 13, 39)
 			var fade := (1 - (radius - 13) / 39) * appear
-			stroke_ell(x, wy, radius, radius * .22, c("#00dbea", fade * .22), 7)
-			stroke_ell(x, wy, radius, radius * .22, c("#28eefa", fade * .4), 3.5)
-			stroke_ell(x, wy, radius, radius * .22, c("#adfcff", fade * .88), 1.6)
+			stroke_ell(x, wy, radius, radius * .22, c("#fff4d6", fade * .95), 2.0)
 	var lv: int = Game.S.upg.float
 	var top_col := c("#ff3ba0") if lv >= 7 else (c("#ffb020") if lv >= 5 else (c("#ff7a18") if lv >= 3 else c("#e64545")))
-	line(Vector2(x, y - 26), Vector2(x, y - 9), c("#f4f7ff"), 2)   # 안테나
+	var plum := c("#3d2346")
+	line(Vector2(x, y - 26), Vector2(x, y - 9), plum, 3.4)   # 안테나 테두리
+	line(Vector2(x, y - 26), Vector2(x, y - 9), c("#fff4d6"), 1.6)
+	circle(x, y - 28, 4.8, plum)
 	circle(x, y - 28, 3.4, top_col)
 	if lv >= 4:
 		circle(x, y - 28, 8 + sin(tm * 1000.0 / 300.0) * 1.6, rgba(255, 220, 120, .35))
+	fill_ell(x, y - 1, 8.0, 11.5, plum)                      # 두들 테두리
 	fill_ell(x, y - 3, 6.5, 9.5, top_col, 0, PI, TAU)       # 몸통 윗부분
-	fill_ell(x, y + 2, 6.5, 9.5, c("#f4f7ff"), 0, 0, PI)     # 몸통 아랫부분
-	stroke_ell(x, y - 1, 6.5, 10, Color(0, 0, 0, .25), 1)
+	fill_ell(x, y + 2, 6.5, 9.5, c("#fff4d6"), 0, 0, PI)     # 몸통 아랫부분
+	line(Vector2(x - 6.5, y - 2.5), Vector2(x + 6.5, y - 2.5), plum, 1.6)
 
