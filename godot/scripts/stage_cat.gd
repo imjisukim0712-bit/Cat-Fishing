@@ -32,6 +32,11 @@ func _ready() -> void:
 	face = Node2D.new()
 	face.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	face.draw.connect(_draw_face)
+	# 얼굴 층: 테두리 없이 털 밝기만 몸과 같게
+	var fm := ShaderMaterial.new()
+	fm.shader = load("res://shaders/lit_sprite.gdshader")
+	fm.set_shader_parameter("fur_shift", Vector3(0.10, 0.08, 0.17))
+	face.material = fm
 	add_child(face)
 
 func _process(_delta: float) -> void:
@@ -122,7 +127,8 @@ func draw_cat(tm: float) -> void:
 	# 낚싯대 + 대를 쥔 앞발 (흥분 떨림은 몸과 같이)
 	xf(Vector2(jitter, 0))
 	draw_rod()
-	part("paw", ROD_HAND + Vector2(-2, 3), SCALE * PART_K * 0.95)
+	# 앞발도 테두리 없는 얼굴 층에 (낚싯대 위에 깔끔하게 얹힘)
+	face_jobs.append(part.bind("paw", ROD_HAND + Vector2(-2 + jitter, 3), SCALE * PART_K * 0.95, Color.WHITE, face))
 	xf()
 
 func draw_rod() -> void:

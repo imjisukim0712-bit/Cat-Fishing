@@ -67,7 +67,7 @@ func _ready() -> void:
 	lit_cat = ShaderMaterial.new()
 	lit_cat.shader = load("res://shaders/lit_sprite.gdshader")
 	# 까만 까미가 밤하늘에 묻히지 않게: 털을 살짝 보랏빛 숯색으로 밝히고, 밝은 라벤더 스티커 테두리
-	lit_cat.set_shader_parameter("outline_px", 7.0)
+	lit_cat.set_shader_parameter("outline_px", 2.8)
 	lit_cat.set_shader_parameter("line_col", Color("#c3b3f2"))
 	lit_cat.set_shader_parameter("fur_shift", Vector3(0.10, 0.08, 0.17))
 	cat.material = lit_cat
