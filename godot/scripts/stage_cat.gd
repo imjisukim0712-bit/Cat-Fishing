@@ -9,6 +9,7 @@ const OUTFITS := ["none", "hoodie", "captain", "wizard", "space", "royal", "pira
 const CELL_ANCHOR := Vector2(222, 421)
 const EYES_Y := 207.0
 const MOUTH_Y := 260.0
+const MOUTH_STRETCH := Vector2(1.6, 1.0)   # 입은 양옆으로 넓게
 const NECK_Y := 282.0
 const SCALE := 0.49                 # 몸 시트 → 무대 (키 346px → 약 170px, 시안 M6 크기)
 const PART_K := 140.0 / 225.0       # 부품 시트 → 몸 시트 (눈 한 쌍 폭 225px → 140px, 머리폭의 59% — 땡그랗고 큰 눈)
@@ -51,10 +52,10 @@ func to_stage(cell: Vector2, anchor: Vector2, sx: float, sy: float) -> Vector2:
 	return anchor + Vector2((cell.x - CELL_ANCHOR.x) * SCALE * sx, (cell.y - CELL_ANCHOR.y) * SCALE * sy)
 
 ## 부품을 중심 기준으로 그리기 (ci: 그릴 캔버스 — 기본은 몸 층)
-func part(name: String, center: Vector2, k: float, mod := Color.WHITE, ci: CanvasItem = null) -> void:
+func part(name: String, center: Vector2, k: float, mod := Color.WHITE, ci: CanvasItem = null, stretch := Vector2.ONE) -> void:
 	if ci == null: ci = self
 	var t: Texture2D = tex[name]
-	var size := t.get_size() * k
+	var size := t.get_size() * k * stretch
 	ci.draw_texture_rect(t, Rect2(center - size / 2.0, size), false, mod)
 
 ## 눈 한 쌍 그림을 좌우 반으로 나눠 spread 만큼 바깥으로 벌려 그리기
@@ -113,7 +114,7 @@ func draw_cat(tm: float) -> void:
 	if mood == "alert": star_pulse = 1.1   # 입질: 눈이 더 동그랗게 커짐
 	face_jobs.append(eyes_split.bind(eyes, eye_pos, pk * star_pulse, EYE_SPREAD * sx, face))
 	var mouth := "mouth_open" if (mood == "star" or mood == "alert") else ""
-	if mouth != "": face_jobs.append(part.bind(mouth, to_stage(Vector2(223, MOUTH_Y + (6.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.62, Color.WHITE, face))
+	if mouth != "": face_jobs.append(part.bind(mouth, to_stage(Vector2(223, MOUTH_Y + (6.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.62, Color.WHITE, face, MOUTH_STRETCH))
 
 	# 목도리 (레벨업 훈장 느낌)
 	if Game.S.upg.charm > 1:
