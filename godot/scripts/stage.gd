@@ -2,10 +2,9 @@ extends "res://scripts/stage_draw.gd"
 ## Hybrid scene: imported paintings beneath live gameplay and a softened cat.
 var backdrop: Sprite2D
 var backdrop_mat: ShaderMaterial
-var pier: Sprite2D
+var pier: Node2D
 var cat: Node2D
 var lit_cat: ShaderMaterial
-var lit_pier: ShaderMaterial
 
 ## 구름: 하늘을 천천히 지나가며, 달을 가리면 달빛(물 반사·테두리 빛)이 약해진다
 const MOON := Vector2(751, 111)
@@ -55,16 +54,8 @@ func _ready() -> void:
 	backdrop_mat.set_shader_parameter("blob_noise", blob)
 	backdrop_mat.set_shader_parameter("lantern_x", LANTERN.x / W)
 	add_child(backdrop)
-	pier = Sprite2D.new()
-	pier.texture = load("res://assets/art/pier.png")
-	pier.centered = false
-	pier.scale = Vector2.ONE * PIER_SCALE
-	pier.region_enabled = true
-	pier.region_rect = Rect2(PIER_CUT, 0, PIER_IMG_W - PIER_CUT, PIER_IMG_H)
-	lit_pier = ShaderMaterial.new()
-	lit_pier.shader = load("res://shaders/lit_sprite.gdshader")
-	lit_pier.set_shader_parameter("submerge", PIER_WATERLINE / PIER_IMG_H)
-	pier.material = lit_pier
+	pier = Node2D.new()
+	pier.set_script(load("res://scripts/stage_pier.gd"))
 	add_child(pier)
 
 	var props := Node2D.new()
@@ -75,6 +66,7 @@ func _ready() -> void:
 	cat.set_script(load("res://scripts/stage_cat.gd"))
 	lit_cat = ShaderMaterial.new()
 	lit_cat.shader = load("res://shaders/lit_sprite.gdshader")
+	lit_cat.set_shader_parameter("outline_px", 6.0)
 	cat.material = lit_cat
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
@@ -87,9 +79,9 @@ func _ready() -> void:
 		clouds.append({"x": rng.randf_range(-100, 1000), "y": rng.randf_range(40, 175),
 			"sp": rng.randf_range(4, 9), "a": 1.0, "blobs": blobs})
 	# 바다 물결 낙서: 수평선 쪽에서 생겨 보는 쪽으로 밀려오며 오른쪽으로 조금씩 흘러감
-	for i in 18:
-		waves.append({"d0": float(i) / 18.0 + rng.randf_range(-0.02, 0.02), "x0": rng.randf_range(0, W + 240),
-			"len": rng.randf_range(0.8, 1.25), "ph": rng.randf() * TAU})
+	for i in 10:
+		waves.append({"d0": float(i) / 10.0 + rng.randf_range(-0.02, 0.02), "x0": rng.randf_range(0, W + 240),
+			"len": rng.randf_range(0.85, 1.15), "ph": rng.randf() * TAU})
 	add_child(cat)
 	# 랜턴 불빛·반딧불이: 빛을 '더하는' 레이어라 부두와 까미를 실제로 비춘다
 	var light := Node2D.new()
@@ -114,7 +106,6 @@ func _draw() -> void:
 	backdrop_mat.set_shader_parameter("strength", 1.7 if wk == "storm" else (1.35 if wk == "hightide" else 1.0))
 	backdrop_mat.set_shader_parameter("lantern", lantern_flicker(Game.clock))
 	update_lights()
-	pier.position = _base + Vector2(0, PIER_TOP)
 	cat.position = _base
 	draw_clouds(Game.clock)
 	draw_water(Game.clock)
@@ -170,35 +161,35 @@ func draw_clouds(t: float) -> void:
 func draw_moon_path(t: float) -> void:
 	var k := clampf(0.35 + 0.65 * moon_light, 0.0, 1.0)
 	var col := Color(MOON_DASH, k)
-	for i in 9:
-		var y := WATER + 7.0 + i * 5.0 + i * i * 0.55
-		var base := (34.0 - i * 2.4) * (0.55 + 0.45 * sin(t * 1.9 + i * 1.37))
+	for i in 7:
+		var y := WATER + 10.0 + i * 11.0
+		var base := (46.0 - i * 2.0) * (0.6 + 0.4 * sin(t * 1.9 + i * 1.37))
 		var sway := sin(t * 1.15 + i * 0.83) * (3.0 + i * 0.8)
 		var pairs := 2 if i % 2 == 1 else 1
 		for j in pairs:
-			var off := 0.0 if pairs == 1 else (-1.0 if j == 0 else 1.0) * (16.0 + i * 1.2)
+			var off := 0.0 if pairs == 1 else (-1.0 if j == 0 else 1.0) * (20.0 + i * 1.2)
 			var cx := MOON.x + sway + off
 			var half := base * (0.6 if pairs == 2 else 1.0) * 0.5
 			if half < 1.0: continue
-			line(Vector2(cx - half, y), Vector2(cx + half, y), col, 3.0 + i * 0.18, true)
+			line(Vector2(cx - half, y), Vector2(cx + half, y), col, 3.6, true)
 
 ## 물결 낙서: 깊이 d(0 수평선 → 1 화면 아래)를 따라 보는 쪽으로 밀려오며 커지고, 출렁이며 오른쪽으로 흐름
 func draw_waves(t: float) -> void:
 	var sp := 1.6 if Game.weather.key == "storm" else (1.3 if Game.weather.key == "hightide" else 1.0)
 	for w in waves:
 		var d: float = fmod(w.d0 + t * 0.028 * sp, 1.0)
-		var sc := 0.22 + 1.05 * d
+		var sc := 0.35 + 0.95 * d
 		var y := WATER + 6.0 + (H - WATER + 10.0) * d * d
 		var x: float = fmod(w.x0 + t * 9.0 * sp * sc, W + 240.0) - 120.0
 		var a := smoothstep(0.0, 0.08, d) * (1.0 - smoothstep(0.88, 1.0, d))
 		if a <= 0.02: continue
-		var length: float = 62.0 * sc * w.len
-		var amp := 3.2 * sc
+		var length: float = 78.0 * sc * w.len
+		var amp := 4.2 * sc
 		var pts := PackedVector2Array()
 		for i in 13:
 			var u := i / 12.0
-			pts.append(Vector2(x + (u - 0.5) * length, y + sin(u * TAU * 1.5 + w.ph + t * 2.4 * sp) * amp))
-		draw_polyline(pts, Color(SEA_LINE, a), 1.3 + 2.0 * sc, true)
+			pts.append(Vector2(x + (u - 0.5) * length, y + sin(u * TAU * 1.25 + w.ph + t * 2.4 * sp) * amp))
+		draw_polyline(pts, Color(SEA_LINE, a), 1.8 + 2.4 * sc, true)
 
 ## 광원 상태 계산 → 바다·까미·부두 셰이더에 전달
 func update_lights() -> void:
@@ -217,7 +208,7 @@ func update_lights() -> void:
 	var flash := Game.lightning if wk == "storm" else 0.0
 	backdrop_mat.set_shader_parameter("moon_light", moon_light)
 	var lpos := get_global_transform() * LANTERN
-	for m in [lit_cat, lit_pier]:
+	for m in [lit_cat]:
 		m.set_shader_parameter("lantern_pos", lpos)
 		m.set_shader_parameter("lantern", flick)
 		m.set_shader_parameter("moon_light", moon_light)

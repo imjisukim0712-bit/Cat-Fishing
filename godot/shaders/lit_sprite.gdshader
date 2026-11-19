@@ -16,6 +16,7 @@ uniform float rim_px = 0.0;                 // (호환용)
 uniform float submerge = 0.0;               // 부두용: 물에 잠기는 높이(UV). 0 이면 사용 안 함
 uniform vec3 sea_col = vec3(0.10, 0.36, 0.52);
 uniform vec3 line_col = vec3(0.24, 0.14, 0.27);
+uniform float outline_px = 0.0;            // 0 보다 크면 그림 바깥에 자주색 두들 테두리 (텍스처 픽셀)
 
 varying vec2 world;
 
@@ -24,12 +25,24 @@ void vertex() {
 }
 
 void fragment() {
-	vec4 c = texture(TEXTURE, UV) * COLOR;
+	vec4 c = COLOR;   // Godot 4: COLOR 는 이미 텍스처 색 × 모듈레이트
+	if (outline_px > 0.0 && c.a < 0.95) {
+		vec2 o = TEXTURE_PIXEL_SIZE * outline_px;
+		float n = 0.0;
+		for (int i = 0; i < 12; i++) {
+			float a = float(i) * 0.5236;
+			n = max(n, texture(TEXTURE, UV + vec2(cos(a), sin(a)) * o).a);
+		}
+		n = smoothstep(0.3, 0.7, n);
+		vec4 edge = vec4(line_col, n);
+		c = mix(edge, vec4(c.rgb, 1.0), c.a);
+		c.a = max(c.a, edge.a);
+	}
 	float dist = length(lantern_pos - world);
 	float fall = lantern * (1.0 - smoothstep(lantern_radius * 0.25, lantern_radius, dist));
 
 	vec3 col = c.rgb * ambient;
-	col = mix(col, col * vec3(1.12, 1.0, 0.82) + vec3(0.05, 0.03, 0.0), fall * 0.35);   // 따뜻하게 물듦
+	col = mix(col, col * vec3(1.12, 1.0, 0.82) + vec3(0.05, 0.03, 0.0), fall * 0.15);   // 따뜻하게 물듦
 	col = mix(col, vec3(1.0), lightning * 0.55);
 
 	if (submerge > 0.0) {   // 부두 기둥이 물에 잠기는 부분

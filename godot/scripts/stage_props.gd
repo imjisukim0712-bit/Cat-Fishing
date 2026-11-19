@@ -15,7 +15,7 @@ func _draw() -> void:
 		# 상자에 물고기가 있으면 위로 작은 반짝이가 톡톡
 		var k := fmod(Game.clock * 0.8, 1.0)
 		var r := 4.0 * sin(k * PI)
-		var p := box + Vector2(8, -12 - k * 6)
+		var p := box + Vector2(12, -26 - k * 6)
 		var pts := PackedVector2Array()
 		for i in 8:
 			var a := i * PI / 4.0 - PI / 2.0
@@ -60,14 +60,16 @@ func draw_float(x: float, y: float, tm: float) -> void:
 		var since := Game.t if Game.mode == "wait" else 10.0
 		var appear := clampf(since / 0.35, 0.0, 1.0)
 		var wy := WATER + 2
-		fill_ell(x, wy, 24 * appear, 6 * appear, c("#2b7aa6", .9 * appear))   # 찌 아래 밝은 물 자국
 		for i in 3:
 			var radius := 13.0 + fmod(tm * 10 + i * 13, 39)
 			var fade := (1 - (radius - 13) / 39) * appear
-			stroke_ell(x, wy, radius, radius * .22, c("#fff4d6", fade * .95), 2.0)
+			stroke_ell(x, wy, radius, radius * .26, c("#fff4d6", fade), 2.8)
 	var lv: int = Game.S.upg.float
 	var top_col := c("#ff3ba0") if lv >= 7 else (c("#ffb020") if lv >= 5 else (c("#ff7a18") if lv >= 3 else c("#e64545")))
 	var plum := c("#3d2346")
+	# 시안처럼 찌를 조금 크게 (1.35배): 찌 중심 기준으로 확대해서 그림
+	xf(Vector2(x, y), 0.0, Vector2(1.35, 1.35))
+	x = 0.0; y = 0.0
 	line(Vector2(x, y - 26), Vector2(x, y - 9), plum, 3.4)   # 안테나 테두리
 	line(Vector2(x, y - 26), Vector2(x, y - 9), c("#fff4d6"), 1.6)
 	circle(x, y - 28, 4.8, plum)
@@ -78,4 +80,5 @@ func draw_float(x: float, y: float, tm: float) -> void:
 	fill_ell(x, y - 3, 6.5, 9.5, top_col, 0, PI, TAU)       # 몸통 윗부분
 	fill_ell(x, y + 2, 6.5, 9.5, c("#fff4d6"), 0, 0, PI)     # 몸통 아랫부분
 	line(Vector2(x - 6.5, y - 2.5), Vector2(x + 6.5, y - 2.5), plum, 1.6)
+	xf()
 

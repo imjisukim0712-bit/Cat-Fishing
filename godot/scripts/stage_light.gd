@@ -1,7 +1,7 @@
 extends "res://scripts/stage_draw.gd"
 ## 빛 레이어 (두들): 랜턴 반짝 선, 별똥별, 반딧불이를 선명한 단색 모양으로 그린다.
 
-const FIREFLIES := 10
+const FIREFLIES := 6
 var flies: Array = []
 var shooting: Array = []      # 가끔 떨어지는 별똥별
 var next_star := 4.0

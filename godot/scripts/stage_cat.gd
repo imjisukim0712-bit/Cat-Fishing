@@ -7,13 +7,13 @@ const OUTFITS := ["none", "hoodie", "captain", "wizard", "space", "royal", "pira
 # 몸 시트 한 칸(443px) 기준 측정값 (두들 화풍·둥근 실루엣·검은 털): 고양이 중심 x=222, 바닥 y=421,
 # 머리 폭 238 (y=220), 코 (223,241), 턱 y≈280
 const CELL_ANCHOR := Vector2(222, 421)
-const EYES_Y := 197.0
+const EYES_Y := 207.0
 const MOUTH_Y := 260.0
 const NECK_Y := 282.0
-const SCALE := 0.435                # 몸 시트 → 무대 (키 345px → 약 150px)
+const SCALE := 0.49                 # 몸 시트 → 무대 (키 346px → 약 170px, 시안 M6 크기)
 const PART_K := 140.0 / 225.0       # 부품 시트 → 몸 시트 (눈 한 쌍 폭 225px → 140px, 머리폭의 59% — 땡그랗고 큰 눈)
 const TAIL_BASE := Vector2(116, 200) # 꼬리 그림에서 몸에 붙는 지점 (아래쪽 끝)
-const EYE_SPREAD := 1.5              # 눈 한 쌍 그림을 반으로 갈라 양쪽으로 더 벌리는 거리 (무대 px, 한쪽 기준)
+const EYE_SPREAD := 3.0              # 눈 한 쌍 그림을 반으로 갈라 양쪽으로 더 벌리는 거리 (무대 px, 한쪽 기준)
 
 var tex := {}
 
@@ -21,7 +21,7 @@ func _ready() -> void:
 	init_brush()
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	for o in OUTFITS: tex["body_" + o] = load(ART + "body_%s.png" % o)
-	for n in ["eyes_normal", "eyes_alert", "eyes_closed", "eyes_happy", "eyes_sad", "eyes_star", "mouth_closed", "mouth_open", "tail", "paw"]:
+	for n in ["eyes_sassy", "eyes_normal", "eyes_alert", "eyes_closed", "eyes_happy", "eyes_sad", "eyes_star", "mouth_closed", "mouth_open", "tail", "paw"]:
 		tex[n] = load(ART + n + ".png")
 
 func _process(_delta: float) -> void:
@@ -80,9 +80,9 @@ func draw_cat(tm: float) -> void:
 	# 표정
 	var mood := Game.cat_mood
 	var blinking := Game.blink > 0.0 and mood != "star"
-	var eyes := "eyes_normal"
+	var eyes := "eyes_sassy"     # 평소: 시안처럼 눈꺼풀이 살짝 내려온 새침한 눈
 	match mood:
-		"alert": eyes = "eyes_alert"
+		"alert": eyes = "eyes_normal"   # 입질: 땡그랗게 커진 눈
 		"happy": eyes = "eyes_happy"
 		"sad": eyes = "eyes_sad"
 		"star": eyes = "eyes_star"
@@ -90,10 +90,11 @@ func draw_cat(tm: float) -> void:
 	var pk := SCALE * PART_K * (0.5 * (1.0 + sx))   # 통통해지면 얼굴도 살짝 넓게
 	var eye_pos := to_stage(Vector2(223, EYES_Y), anchor, sx, sy)
 	var star_pulse := 1.0 + (sin(tm * 9) * 0.08 if mood == "star" else 0.0)
-	if eyes == "eyes_alert": star_pulse = 1.08   # 입질: 눈이 더 동그랗게 커짐
+	if eyes == "eyes_sassy": star_pulse = 1.15
+	if mood == "alert": star_pulse = 1.1   # 입질: 눈이 더 동그랗게 커짐
 	eyes_split(eyes, eye_pos, pk * star_pulse, EYE_SPREAD * sx)
-	var mouth := "mouth_open" if (mood == "star" or mood == "alert") else "mouth_closed"
-	part(mouth, to_stage(Vector2(223, MOUTH_Y + (6.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.62)
+	var mouth := "mouth_open" if (mood == "star" or mood == "alert") else ""
+	if mouth != "": part(mouth, to_stage(Vector2(223, MOUTH_Y + (6.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.62)
 
 	# 목도리 (레벨업 훈장 느낌)
 	if Game.S.upg.charm > 1:
@@ -118,11 +119,11 @@ func draw_rod() -> void:
 	var plum := c("#3d2346")
 	line(h - d * 26, h + d * 16, plum, 10, true)
 	line(h - d * 26, h + d * 16, c("#c9875a"), 6.5, true)   # 손잡이
-	var cols := ["#8a6b46", "#a8804f", "#c09a5c", "#d4b06a", "#9fd8ff", "#b6a2ff", "#ffb020", "#ff6ec7"]
+	var cols := ["#ffb082", "#ffc58f", "#ffd36b", "#a8e6a0", "#9fd8ff", "#b6a2ff", "#ffb020", "#ff8ac7"]
 	var bend := 26.0 if (Game.mode == "fight" or Game.mode == "bite") else (8.0 if Game.mode == "wait" else 2.0)
 	var rod := quad_pts(h + d * 14, h + d * L * 0.55 + Vector2(0, bend * 0.4), tip + Vector2(0, bend))
-	stroke(rod, plum, 6.5, true)
-	stroke(rod, c(cols[mini(cols.size() - 1, Game.S.upg.rod - 1)]), 3.6, true)
+	stroke(rod, plum, 9.5, true)
+	stroke(rod, c(cols[mini(cols.size() - 1, Game.S.upg.rod - 1)]), 6.0, true)
 	var reel := h + Vector2(cos(a + 1.4), sin(a + 1.4)) * 13   # 릴
 	circle(reel.x, reel.y, 8.6, plum)
 	circle(reel.x, reel.y, 7, c("#e6dcfa"))

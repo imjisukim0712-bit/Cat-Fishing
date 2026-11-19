@@ -79,8 +79,8 @@ void fragment() {
 		float mask = smoothstep(0.02, 0.22, d);
 		float crest = smoothstep(0.95 - aa, 0.95 + aa, h) * mask;
 		float trough = (1.0 - smoothstep(-1.05 - aa, -1.05 + aa, h)) * mask;
-		col.rgb = mix(col.rgb, col.rgb * 1.16 + vec3(0.02, 0.06, 0.07), crest * 0.85);
-		col.rgb = mix(col.rgb, col.rgb * 0.84, trough * 0.8);
+		col.rgb = mix(col.rgb, col.rgb * 1.12 + vec3(0.02, 0.04, 0.05), crest * 0.45);
+		col.rgb = mix(col.rgb, col.rgb * 0.9, trough * 0.4);
 		// 수평선 바로 아래 얇은 밝은 띠가 살랑임
 		float rim = 1.0 - smoothstep(0.0, 0.018 + 0.006 * sin(uv.x * 40.0 + t * 1.5), d);
 		col.rgb = mix(col.rgb, col.rgb * 1.22 + vec3(0.03, 0.05, 0.06), rim * 0.6);
