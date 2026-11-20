@@ -9,7 +9,8 @@ const OUTFITS := ["none", "hoodie", "captain", "wizard", "space", "royal", "pira
 const CELL_ANCHOR := Vector2(222, 421)
 const EYES_Y := 207.0
 const MOUTH_Y := 260.0
-const MOUTH_STRETCH := Vector2(1.6, 1.0)   # 입은 양옆으로 넓게
+const NOSE_BOTTOM := 248.0   # 몸 그림에서 코 아래 끝 (입이 시작되는 곳)
+const MOUTH_W := 15.0        # ω 한쪽 곡선 반지름 (몸 그림 px) — 양옆으로 넓게
 const NECK_Y := 282.0
 const SCALE := 0.49                 # 몸 시트 → 무대 (키 346px → 약 170px, 시안 M6 크기)
 const PART_K := 140.0 / 225.0       # 부품 시트 → 몸 시트 (눈 한 쌍 폭 225px → 140px, 머리폭의 59% — 땡그랗고 큰 눈)
@@ -113,8 +114,9 @@ func draw_cat(tm: float) -> void:
 	if eyes == "eyes_sassy": star_pulse = 1.15
 	if mood == "alert": star_pulse = 1.1   # 입질: 눈이 더 동그랗게 커짐
 	face_jobs.append(eyes_split.bind(eyes, eye_pos, pk * star_pulse, EYE_SPREAD * sx, face))
-	var mouth := "mouth_open" if (mood == "star" or mood == "alert") else ""
-	if mouth != "": face_jobs.append(part.bind(mouth, to_stage(Vector2(223, MOUTH_Y + (6.0 if mouth == "mouth_open" else 0.0)), anchor, sx, sy), pk * 0.62, Color.WHITE, face, MOUTH_STRETCH))
+	# 고양이 입 (ω): 코 밑 짧은 선 + 양옆 둥근 곡선. 신나거나 입질 땐 그 아래로 혀가 보이게 벌림
+	var open := mood in ["star", "alert", "happy"]
+	face_jobs.append(draw_mouth.bind(face, to_stage(Vector2(223, NOSE_BOTTOM), anchor, sx, sy), SCALE * (0.5 * (1.0 + sx)), open, tm))
 
 	# 목도리 (레벨업 훈장 느낌)
 	if Game.S.upg.charm > 1:
@@ -131,6 +133,34 @@ func draw_cat(tm: float) -> void:
 	# 앞발도 테두리 없는 얼굴 층에 (낚싯대 위에 깔끔하게 얹힘)
 	face_jobs.append(part.bind("paw", ROD_HAND + Vector2(-2 + jitter, 3), SCALE * PART_K * 0.95, Color.WHITE, face))
 	xf()
+
+## ω 고양이 입. k: 몸 그림 px → 무대 px
+func draw_mouth(ci: CanvasItem, nose: Vector2, k: float, open: bool, tm: float) -> void:
+	var line_c := Color("#f6eeff")
+	var w := MOUTH_W * k
+	var lw := maxf(1.6, 4.2 * k)
+	var c := nose + Vector2(0, 7.0 * k)
+	if open:
+		# 벌린 입: 둥근 아래턱 + 분홍 혀 (말할 때처럼 살짝 여닫힘)
+		var depth := w * (1.55 + 0.15 * sin(tm * 9.0))
+		var top := c.y + w * 0.55
+		var pts := PackedVector2Array()
+		for i in 21:
+			var a := PI * i / 20.0
+			pts.append(Vector2(c.x + cos(a) * w * 1.2, top + sin(a) * depth))
+		ci.draw_colored_polygon(pts, Color("#b3375f"))
+		var tongue := PackedVector2Array()
+		for i in 21:
+			var a := PI * i / 20.0
+			tongue.append(Vector2(c.x + cos(a) * w * 0.78, top + depth * 0.42 + sin(a) * depth * 0.52))
+		ci.draw_colored_polygon(tongue, Color("#ff9ab3"))
+		pts.append(pts[0])
+		ci.draw_polyline(pts, line_c, lw * 0.8, true)
+	# 코 밑 선
+	ci.draw_line(nose, c, line_c, lw, true)
+	# 양옆 둥근 곡선 (ω)
+	ci.draw_arc(c + Vector2(-w, 0), w, 0.0, PI, 16, line_c, lw, true)
+	ci.draw_arc(c + Vector2(w, 0), w, 0.0, PI, 16, line_c, lw, true)
 
 func draw_rod() -> void:
 	var a := Game.rod_angle(); var L := 176.0
